@@ -10,10 +10,16 @@ namespace ParallelRecognition
 {
     public class ParallelRecognition
     {
+        ManualResetEvent hasFinishedEvent = new ManualResetEvent(true);
+        ManualResetEvent areFreeWorkersEvent = new ManualResetEvent(false);
+        AutoResetEvent isDictFreeEvent = new AutoResetEvent(true);
+        Dictionary<string, DateTime> creationTimes = new Dictionary<string, DateTime>();
+
         private string directoryPath;
         public string DirectoryPath { get => directoryPath; private set => directoryPath = value; }
 
-        public bool HasFinished { get; private set; }
+        private bool hasFinished = true;
+        public bool HasFinished { get => hasFinished; private set => hasFinished = value; }
         bool IsInterrupted { get; set; }
         Thread manager_thread = null;
 
@@ -46,6 +52,7 @@ namespace ParallelRecognition
             }
             while (fileIndex < files.Length)
             {
+                areFreeWorkersEvent.Reset();
                 if (IsInterrupted) break;
                 for (int i = 0; i < workers.Length; i++)
                 {
@@ -58,26 +65,34 @@ namespace ParallelRecognition
                         workers[i].Start(files[fileIndex++]);
                     }
                 }
+                areFreeWorkersEvent.WaitOne();
             }
             foreach (var worker in workers)
             {
                 worker.Join();
             }
             HasFinished = true;
+            IsInterrupted = false;
+            hasFinishedEvent.Set();
         }
 
         public bool Stop()
         {
+            IsInterrupted = !HasFinished;
+            hasFinishedEvent.WaitOne();
             return true;
         }
 
-        static void RecognizeContentsStub(object obj)
+        void RecognizeContentsStub(object obj)
         {
             var filePath = obj as string;
+            isDictFreeEvent.WaitOne();
+            creationTimes[filePath] = File.GetCreationTime(filePath);
+            isDictFreeEvent.Set();
             //return "{'Yay': 0}";
         }
 
-            static void RecognizeContents(string filePath)
+        static void RecognizeContents(string filePath)
         {
             string modelPath = @"DnnImageModels\ResNet50Onnx\resnet50v2.onnx";
             using (var session = new InferenceSession(modelPath))
