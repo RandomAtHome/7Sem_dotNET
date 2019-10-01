@@ -13,32 +13,29 @@ namespace ParallelRecognition
         private static readonly object synchronizationObject = new object();
         ManualResetEvent hasFinishedEvent = new ManualResetEvent(true);
         ManualResetEvent areFreeWorkersEvent = new ManualResetEvent(false);
+
         Dictionary<string, DateTime> creationTimes = new Dictionary<string, DateTime>();
-
         private string directoryPath;
-        public string DirectoryPath { get => directoryPath; private set => directoryPath = value; }
-
         private bool hasFinished = true;
-        public bool HasFinished { get => hasFinished; private set => hasFinished = value; }
-        bool IsInterrupted { get; set; }
-        public Dictionary<string, DateTime> CreationTimes { get => creationTimes;}
 
-        Thread managerThread = null;
+        bool IsInterrupted { get; set; }
+        public bool HasFinished { get => hasFinished; private set => hasFinished = value; }
+        public string DirectoryPath { get => directoryPath; private set => directoryPath = value; }
+        public Dictionary<string, DateTime> CreationTimes { get => creationTimes;}
 
         public ParallelRecognition(string directoryPath)
         {
-            DirectoryPath = directoryPath;
-            managerThread = new Thread(ManageJobs)
-            {
-                IsBackground = true
-            };
+            DirectoryPath = directoryPath;    
         }
 
         public bool Run()
         {
             try
             {
-                managerThread.Start(Directory.GetFiles(DirectoryPath));
+                new Thread(ManageJobs)
+                {
+                    IsBackground = true
+                }.Start(Directory.GetFiles(DirectoryPath));
             } catch (ArgumentException) {
                 return false;
             }      
@@ -47,11 +44,9 @@ namespace ParallelRecognition
 
         void ManageJobs(object filenames)
         {
+            hasFinishedEvent.Reset();
             HasFinished = false;
             IsInterrupted = false;
-            hasFinishedEvent.Reset();
-            var files = filenames as string[];
-            int fileIndex = 0;
             ThreadPool.GetMaxThreads(out int workerThreadsCount, out int portThreads);
             var workers = new Thread[workerThreadsCount];
             for (int i = 0; i < workers.Length; i++)
@@ -61,6 +56,9 @@ namespace ParallelRecognition
                     IsBackground = true
                 };
             }
+
+            var files = filenames as string[];
+            int fileIndex = 0;
             while (fileIndex < files.Length)
             {
                 if (IsInterrupted) break;
@@ -80,10 +78,7 @@ namespace ParallelRecognition
             }
             foreach (var worker in workers)
             {
-                if (worker.IsAlive)
-                {
-                    worker.Join();
-                }
+                if (worker.IsAlive) worker.Join();
             }
             HasFinished = true;
             IsInterrupted = false;
