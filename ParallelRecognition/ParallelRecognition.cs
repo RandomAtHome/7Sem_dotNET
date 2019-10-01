@@ -5,7 +5,7 @@ using System.IO;
 using System.Numerics.Tensors;
 using Microsoft.ML.OnnxRuntime;
 
-namespace ParallelRecognition1
+namespace ParallelRecognition
 {
     public class ParallelRecognition
     {
@@ -24,7 +24,7 @@ namespace ParallelRecognition1
             var filePaths = Directory.GetFiles(DirectoryPath);
             foreach (var filePath in filePaths)
             {
-                UseApi(filePath);
+                RecognizeContentsStub(filePath);
             }
             return true;
         }
@@ -34,9 +34,14 @@ namespace ParallelRecognition1
             return true;
         }
 
-        static void UseApi(string filePath)
+        static string RecognizeContentsStub(string filePath)
         {
-            string modelPath = @"ResNet50.onnx";
+            return "{'Yay': 0}";
+        }
+
+            static void RecognizeContents(string filePath)
+        {
+            string modelPath = @"DnnImageModels\ResNet50Onnx\resnet50v2.onnx";
             using (var session = new InferenceSession(modelPath))
             {
                 var inputMeta = session.InputMetadata;
@@ -67,16 +72,16 @@ namespace ParallelRecognition1
         {
             var tensorData = new List<float>();
 
-            // read data from file
-            using (var inputFile = new System.IO.StreamReader(filename))
-            {
-                inputFile.ReadLine(); //skip the input name
-                string[] dataStr = inputFile.ReadLine().Split(new char[] { ',', '[', ']' }, StringSplitOptions.RemoveEmptyEntries);
-                for (int i = 0; i < dataStr.Length; i++)
-                {
-                    tensorData.Add(Single.Parse(dataStr[i]));
-                }
-            }
+            //// read data from file
+            //using (var inputFile = new System.IO.StreamReader(filename))
+            //{
+            //    inputFile.ReadLine(); //skip the input name
+            //    string[] dataStr = inputFile.ReadLine().Split(new char[] { ',', '[', ']' }, StringSplitOptions.RemoveEmptyEntries);
+            //    for (int i = 0; i < dataStr.Length; i++)
+            //    {
+            //        tensorData.Add(Single.Parse(dataStr[i]));
+            //    }
+            //}
 
             return tensorData.ToArray();
         }

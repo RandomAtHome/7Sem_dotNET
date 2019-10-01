@@ -1,9 +1,4 @@
-﻿using ParallelRecognition1;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System;
 
 namespace ConsoleApp
 {
@@ -12,7 +7,7 @@ namespace ConsoleApp
         static void Main(string[] args)
         {
             var dirPath = Console.ReadLine();
-            ParallelRecognition parallelRecognition = new ParallelRecognition(dirPath);
+            ParallelRecognition.ParallelRecognition parallelRecognition = new ParallelRecognition.ParallelRecognition(dirPath);
             parallelRecognition.Run();
         }
     }
