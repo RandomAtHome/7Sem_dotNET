@@ -1,5 +1,5 @@
 ﻿using System;
-using System.Threading;
+//using System.Threading;
 
 namespace ConsoleApp
 {
@@ -7,8 +7,9 @@ namespace ConsoleApp
     {
         static void Main(string[] args)
         {
-            var dirPath = Console.ReadLine();
-            ParallelRecognition.ParallelRecognition parallelRecognition = new ParallelRecognition.ParallelRecognition(dirPath);
+            //var dirPath = Console.ReadLine();
+            var dirPath = @"D:\Coding\Task1_ParallelRecognition\ILSVRC2012_img_val";
+            var parallelRecognition = new ParallelRecognition.ParallelRecognition(dirPath);
             if (!parallelRecognition.Run())
             {
                 Console.WriteLine("Bad directory input!");
