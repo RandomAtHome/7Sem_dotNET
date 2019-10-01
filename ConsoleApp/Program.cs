@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading;
 
 namespace ConsoleApp
 {
@@ -8,7 +9,20 @@ namespace ConsoleApp
         {
             var dirPath = Console.ReadLine();
             ParallelRecognition.ParallelRecognition parallelRecognition = new ParallelRecognition.ParallelRecognition(dirPath);
-            parallelRecognition.Run();
+            if (!parallelRecognition.Run())
+            {
+                Console.WriteLine("Bad directory input!");
+                Console.ReadLine();
+                return;
+            }
+            //Thread.Sleep(500);
+            Console.ReadLine();
+            parallelRecognition.Stop();
+            foreach (var pair in parallelRecognition.CreationTimes)
+            {
+                Console.WriteLine(pair.Key.ToString() + " " + pair.Value.ToString());
+            }
+            Console.ReadLine();
         }
     }
 }

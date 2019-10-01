@@ -10,9 +10,9 @@ namespace ParallelRecognition
 {
     public class ParallelRecognition
     {
+        private static readonly object synchronizationObject = new object();
         ManualResetEvent hasFinishedEvent = new ManualResetEvent(true);
         ManualResetEvent areFreeWorkersEvent = new ManualResetEvent(false);
-        AutoResetEvent isDictFreeEvent = new AutoResetEvent(true);
         Dictionary<string, DateTime> creationTimes = new Dictionary<string, DateTime>();
 
         private string directoryPath;
@@ -21,24 +21,35 @@ namespace ParallelRecognition
         private bool hasFinished = true;
         public bool HasFinished { get => hasFinished; private set => hasFinished = value; }
         bool IsInterrupted { get; set; }
-        Thread manager_thread = null;
+        public Dictionary<string, DateTime> CreationTimes { get => creationTimes;}
+
+        Thread managerThread = null;
 
         public ParallelRecognition(string directoryPath)
         {
             DirectoryPath = directoryPath;
-            manager_thread = new Thread(ManageJobs);
+            managerThread = new Thread(ManageJobs)
+            {
+                IsBackground = true
+            };
         }
 
         public bool Run()
         {
-            HasFinished = false;
-            IsInterrupted = false;
-            manager_thread.Start(Directory.GetFiles(DirectoryPath));
+            try
+            {
+                managerThread.Start(Directory.GetFiles(DirectoryPath));
+            } catch (ArgumentException) {
+                return false;
+            }      
             return true;
         }
 
         void ManageJobs(object filenames)
         {
+            HasFinished = false;
+            IsInterrupted = false;
+            hasFinishedEvent.Reset();
             var files = filenames as string[];
             int fileIndex = 0;
             ThreadPool.GetMaxThreads(out int workerThreadsCount, out int portThreads);
@@ -52,11 +63,11 @@ namespace ParallelRecognition
             }
             while (fileIndex < files.Length)
             {
-                areFreeWorkersEvent.Reset();
                 if (IsInterrupted) break;
+                areFreeWorkersEvent.Reset();
                 for (int i = 0; i < workers.Length; i++)
                 {
-                    if (!workers[i].IsAlive && !IsInterrupted)
+                    if (!workers[i].IsAlive && !IsInterrupted && fileIndex < files.Length)
                     {
                         workers[i] = new Thread(RecognizeContentsStub)
                         {
@@ -69,7 +80,10 @@ namespace ParallelRecognition
             }
             foreach (var worker in workers)
             {
-                worker.Join();
+                if (worker.IsAlive)
+                {
+                    worker.Join();
+                }
             }
             HasFinished = true;
             IsInterrupted = false;
@@ -86,10 +100,12 @@ namespace ParallelRecognition
         void RecognizeContentsStub(object obj)
         {
             var filePath = obj as string;
-            isDictFreeEvent.WaitOne();
-            creationTimes[filePath] = File.GetCreationTime(filePath);
-            isDictFreeEvent.Set();
-            //return "{'Yay': 0}";
+            lock (synchronizationObject)
+            {
+                // Here be onnxruntime action!
+                CreationTimes[filePath] = File.GetCreationTime(filePath);
+            }
+            areFreeWorkersEvent.Set();
         }
 
         static void RecognizeContents(string filePath)
@@ -114,8 +130,10 @@ namespace ParallelRecognition
                     // dump the results
                     foreach (var r in results)
                     {
-                        Console.WriteLine("Output for {0}", r.Name);
-                        Console.WriteLine(r.AsTensor<float>().GetArrayString());
+                        lock (synchronizationObject)
+                        {
+                            // Here be onnxruntime action!
+                        }
                     }
                 }
             }
