@@ -1,4 +1,4 @@
-﻿//variant a2
+﻿//variant 2a
 using System;
 using System.Collections.Generic;
 using System.Drawing;
@@ -17,14 +17,14 @@ namespace ParallelRecognition
         ManualResetEvent areFreeWorkersEvent = new ManualResetEvent(false);
         InferenceSession session = null;
         
-        Dictionary<string, DateTime> creationTimes = new Dictionary<string, DateTime>();
+        Dictionary<string, string> creationTimes = new Dictionary<string, string>();
         private string directoryPath;
         private bool hasFinished = true;
 
         bool IsInterrupted { get; set; }
         public bool HasFinished { get => hasFinished; private set => hasFinished = value; }
         public string DirectoryPath { get => directoryPath; private set => directoryPath = value; }
-        public Dictionary<string, DateTime> CreationTimes { get => creationTimes;}
+        public Dictionary<string, string> CreationTimes { get => creationTimes;}
 
         public ParallelRecognition(string directoryPath)
         {
@@ -51,7 +51,8 @@ namespace ParallelRecognition
             hasFinishedEvent.Reset();
             HasFinished = false;
             IsInterrupted = false;
-            ThreadPool.GetMaxThreads(out int workerThreadsCount, out int portThreads);
+            int workerThreadsCount = Environment.ProcessorCount;
+            //ThreadPool.GetMaxThreads(out int workerThreadsCount, out int portThreads);
             var workers = new Thread[workerThreadsCount];
             for (int i = 0; i < workers.Length; i++)
             {
@@ -64,6 +65,7 @@ namespace ParallelRecognition
             var files = filenames as string[];
             int fileIndex = 0;
             while (fileIndex < files.Length)
+                // try to use ConcurrentQueue
             {
                 if (IsInterrupted) break;
                 areFreeWorkersEvent.Reset();
@@ -96,29 +98,29 @@ namespace ParallelRecognition
             return true;
         }
 
-        void RecognizeContentsStub(object obj)
-        {
-            var filePath = obj as string;
-            lock (synchronizationObject)
-            {
-                // Here be onnxruntime action!
-                CreationTimes[filePath] = File.GetCreationTime(filePath);
-            }
-            areFreeWorkersEvent.Set();
-        }
+        //void RecognizeContentsStub(object obj)
+        //{
+        //    var filePath = obj as string;
+        //    lock (synchronizationObject)
+        //    {
+        //        // Here be onnxruntime action!
+        //        CreationTimes[filePath] = File.GetCreationTime(filePath);
+        //    }
+        //    areFreeWorkersEvent.Set();
+        //}
 
         void RecognizeContents(object obj)
         {
             var filePath = obj as string;
             var inputMeta = session.InputMetadata;
             var container = new List<NamedOnnxValue>();
-
+            // check if canceled
             var tensor = LoadTensorFromFile(filePath);
             foreach (var name in inputMeta.Keys)
             {
                 container.Add(NamedOnnxValue.CreateFromTensor<float>(name, tensor));
             }
-
+            // check if canceled
             using (var results = session.Run(container)) 
             {
                 foreach (var r in results)
@@ -137,9 +139,15 @@ namespace ParallelRecognition
                     Array.Sort(sorted, (x, y) => -x.CompareTo(y));
                     var max_val1 = sorted[0];
                     var max_ind1 = softmax.ToList().IndexOf(max_val1);
-                    Console.WriteLine("[" + filePath + "] 1) '" + max_ind1 + "' " + Math.Round(max_val1, 2) * 100 + "%");
+                    lock (synchronizationObject)
+                    {
+                        var result = "'" + max_ind1.ToString() + "' " + (Math.Round(max_val1, 2) * 100).ToString() + " %";
+                        Console.WriteLine("[" + filePath + "]: " + result);
+                        CreationTimes[filePath] = result;
+                    }
                 }
             }
+            areFreeWorkersEvent.Set();
         }
 
         static DenseTensor<float> LoadTensorFromFile(string filename)

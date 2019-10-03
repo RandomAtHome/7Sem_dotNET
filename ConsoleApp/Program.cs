@@ -21,7 +21,7 @@ namespace ConsoleApp
             parallelRecognition.Stop();
             foreach (var pair in parallelRecognition.CreationTimes)
             {
-                Console.WriteLine(pair.Key.ToString() + " " + pair.Value.ToString());
+                Console.WriteLine(pair.Key.ToString() + "|" + pair.Value.ToString());
             }
             Console.ReadLine();
         }
