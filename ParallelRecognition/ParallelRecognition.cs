@@ -1,30 +1,31 @@
 ﻿//variant 2a
+using Microsoft.ML.OnnxRuntime;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Numerics.Tensors;
 using System.Threading;
-using Microsoft.ML.OnnxRuntime;
 
 namespace ParallelRecognition
 {
     public class ParallelRecognition
     {
-        private static readonly object synchronizationObject = new object();
         ManualResetEvent hasFinishedEvent = new ManualResetEvent(true);
         ManualResetEvent areFreeWorkersEvent = new ManualResetEvent(false);
         InferenceSession session = null;
-        
-        Dictionary<string, string> creationTimes = new Dictionary<string, string>();
-        private string directoryPath;
-        private bool hasFinished = true;
 
-        bool IsInterrupted { get; set; }
+        ConcurrentDictionary<string, string> creationTimes = new ConcurrentDictionary<string, string>();
+        private string directoryPath;
+        private volatile bool hasFinished = true;
+        private volatile bool isInterrupted = false;
+
+        bool IsInterrupted { get => isInterrupted; set => isInterrupted = value; }
         public bool HasFinished { get => hasFinished; private set => hasFinished = value; }
         public string DirectoryPath { get => directoryPath; private set => directoryPath = value; }
-        public Dictionary<string, string> CreationTimes { get => creationTimes;}
+        public ConcurrentDictionary<string, string> CreationTimes { get => creationTimes; }
 
         public ParallelRecognition(string directoryPath)
         {
@@ -40,9 +41,11 @@ namespace ParallelRecognition
                 {
                     IsBackground = true
                 }.Start(Directory.GetFiles(DirectoryPath));
-            } catch (ArgumentException) {
+            }
+            catch (ArgumentException)
+            {
                 return false;
-            }      
+            }
             return true;
         }
 
@@ -51,8 +54,8 @@ namespace ParallelRecognition
             hasFinishedEvent.Reset();
             HasFinished = false;
             IsInterrupted = false;
+            var queue = new ConcurrentQueue<string>(filenames as string[]);
             int workerThreadsCount = Environment.ProcessorCount;
-            //ThreadPool.GetMaxThreads(out int workerThreadsCount, out int portThreads);
             var workers = new Thread[workerThreadsCount];
             for (int i = 0; i < workers.Length; i++)
             {
@@ -60,27 +63,7 @@ namespace ParallelRecognition
                 {
                     IsBackground = true
                 };
-            }
-
-            var files = filenames as string[];
-            int fileIndex = 0;
-            while (fileIndex < files.Length)
-                // try to use ConcurrentQueue
-            {
-                if (IsInterrupted) break;
-                areFreeWorkersEvent.Reset();
-                for (int i = 0; i < workers.Length; i++)
-                {
-                    if (!workers[i].IsAlive && !IsInterrupted && fileIndex < files.Length)
-                    {
-                        workers[i] = new Thread(RecognizeContents)
-                        {
-                            IsBackground = true
-                        };
-                        workers[i].Start(files[fileIndex++]);
-                    }
-                }
-                areFreeWorkersEvent.WaitOne();
+                workers[i].Start(queue);
             }
             foreach (var worker in workers)
             {
@@ -98,51 +81,40 @@ namespace ParallelRecognition
             return true;
         }
 
-        //void RecognizeContentsStub(object obj)
-        //{
-        //    var filePath = obj as string;
-        //    lock (synchronizationObject)
-        //    {
-        //        // Here be onnxruntime action!
-        //        CreationTimes[filePath] = File.GetCreationTime(filePath);
-        //    }
-        //    areFreeWorkersEvent.Set();
-        //}
-
         void RecognizeContents(object obj)
         {
-            var filePath = obj as string;
-            var inputMeta = session.InputMetadata;
-            var container = new List<NamedOnnxValue>();
-            // check if canceled
-            var tensor = LoadTensorFromFile(filePath);
-            foreach (var name in inputMeta.Keys)
+            var queue = obj as ConcurrentQueue<string>;
+            while (queue.TryDequeue(out string filePath))
             {
-                container.Add(NamedOnnxValue.CreateFromTensor<float>(name, tensor));
-            }
-            // check if canceled
-            using (var results = session.Run(container)) 
-            {
-                foreach (var r in results)
+                var inputMeta = session.InputMetadata;
+                var container = new List<NamedOnnxValue>();
+                if (IsInterrupted) break;
+                var tensor = LoadTensorFromFile(filePath);
+                foreach (var name in inputMeta.Keys)
                 {
-                    var tmp = r.AsEnumerable<float>().ToArray();
-                    double[] exp = new double[tmp.Length];
-                    int i = 0;
-                    foreach (var x in tmp)
+                    container.Add(NamedOnnxValue.CreateFromTensor<float>(name, tensor));
+                }
+                if (IsInterrupted) break;
+                using (var results = session.Run(container))
+                {
+                    foreach (var r in results)
                     {
-                        exp[i++] = Math.Exp((double)x);
-                    }
-                    var sum_exp = exp.Sum();
-                    var softmax = exp.Select(j => j / sum_exp);
-                    double[] sorted = new double[tmp.Length];
-                    Array.Copy(softmax.ToArray(), sorted, tmp.Length);
-                    Array.Sort(sorted, (x, y) => -x.CompareTo(y));
-                    var max_val1 = sorted[0];
-                    var max_ind1 = softmax.ToList().IndexOf(max_val1);
-                    lock (synchronizationObject)
-                    {
+                        var tmp = r.AsEnumerable<float>().ToArray();
+                        double[] exp = new double[tmp.Length];
+                        int i = 0;
+                        foreach (var x in tmp)
+                        {
+                            exp[i++] = Math.Exp((double)x);
+                        }
+                        var sum_exp = exp.Sum();
+                        var softmax = exp.Select(j => j / sum_exp);
+                        double[] sorted = new double[tmp.Length];
+                        Array.Copy(softmax.ToArray(), sorted, tmp.Length);
+                        Array.Sort(sorted, (x, y) => -x.CompareTo(y));
+                        var max_val1 = sorted[0];
+                        var max_ind1 = softmax.ToList().IndexOf(max_val1);
                         var result = "'" + max_ind1.ToString() + "' " + (Math.Round(max_val1, 2) * 100).ToString() + " %";
-                        Console.WriteLine("[" + filePath + "]: " + result);
+                        //Console.WriteLine("[" + filePath + "]: " + result);
                         CreationTimes[filePath] = result;
                     }
                 }

@@ -18,12 +18,12 @@ namespace ConsoleApp
             }
             //Thread.Sleep(500);
             Console.ReadLine();
+            Console.WriteLine("Received interrupt!");
             parallelRecognition.Stop();
             foreach (var pair in parallelRecognition.CreationTimes)
             {
-                Console.WriteLine(pair.Key.ToString() + "|" + pair.Value.ToString());
+                Console.WriteLine(pair.Key.ToString() + " | " + pair.Value.ToString());
             }
-            Console.ReadLine();
         }
     }
 }
