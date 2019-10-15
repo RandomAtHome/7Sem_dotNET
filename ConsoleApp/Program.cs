@@ -1,5 +1,5 @@
 ﻿using System;
-//using System.Threading;
+using System.Threading;
 
 namespace ConsoleApp
 {
@@ -16,13 +16,27 @@ namespace ConsoleApp
                 Console.ReadLine();
                 return;
             }
-            //Thread.Sleep(500);
+            var loopThread = new Thread(printLoop)
+            {
+                IsBackground = true
+            };
+            loopThread.Start(parallelRecognition);
             Console.ReadLine();
             Console.WriteLine("Received interrupt!");
             parallelRecognition.Stop();
-            foreach (var pair in parallelRecognition.CreationTimes)
+            loopThread.Join();
+        }
+
+        static void printLoop(object data)
+        {
+            var parallelRecognition = data as ParallelRecognition.ParallelRecognition;
+            while (!parallelRecognition.HasFinished)
             {
-                Console.WriteLine(pair.Key.ToString() + " | " + pair.Value.ToString());
+                Thread.Sleep(500);
+                while (parallelRecognition.CreationTimes.TryDequeue(out string item))
+                {
+                    Console.WriteLine(item);
+                }
             }
         }
     }

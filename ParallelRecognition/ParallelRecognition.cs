@@ -17,7 +17,7 @@ namespace ParallelRecognition
         ManualResetEvent areFreeWorkersEvent = new ManualResetEvent(false);
         InferenceSession session = null;
 
-        ConcurrentDictionary<string, string> creationTimes = new ConcurrentDictionary<string, string>();
+        ConcurrentQueue<string> creationTimes = new ConcurrentQueue<string>();
         private string directoryPath;
         private volatile bool hasFinished = true;
         private volatile bool isInterrupted = false;
@@ -25,7 +25,7 @@ namespace ParallelRecognition
         bool IsInterrupted { get => isInterrupted; set => isInterrupted = value; }
         public bool HasFinished { get => hasFinished; private set => hasFinished = value; }
         public string DirectoryPath { get => directoryPath; private set => directoryPath = value; }
-        public ConcurrentDictionary<string, string> CreationTimes { get => creationTimes; }
+        public ConcurrentQueue<string> CreationTimes { get => creationTimes; }
 
         public ParallelRecognition(string directoryPath)
         {
@@ -114,8 +114,7 @@ namespace ParallelRecognition
                         var max_val1 = sorted[0];
                         var max_ind1 = softmax.ToList().IndexOf(max_val1);
                         var result = "'" + max_ind1.ToString() + "' " + (Math.Round(max_val1, 2) * 100).ToString() + " %";
-                        //Console.WriteLine("[" + filePath + "]: " + result);
-                        CreationTimes[filePath] = result;
+                        CreationTimes.Enqueue(filePath + result);
                     }
                 }
             }
