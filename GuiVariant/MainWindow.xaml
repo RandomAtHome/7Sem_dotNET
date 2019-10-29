@@ -19,7 +19,7 @@
     </Window.Resources>
     <Grid>
         <StackPanel HorizontalAlignment="Left" Height="400" Margin="10,10,0,0" VerticalAlignment="Top" Width="140">
-            <Button x:Name="directorySelectBtn" Content="Select Directory"/>
+            <Button x:Name="directorySelectBtn" Content="Select Directory" Click="directorySelectBtn_Click"/>
             <Button x:Name="startRecognitionBtn" Content="Start Recognition"/>
             <Button x:Name="stopRecognitionBtn" Content="Finish Recognition"/>
         </StackPanel>
