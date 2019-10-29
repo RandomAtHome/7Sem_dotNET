@@ -5,6 +5,7 @@ using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -85,6 +86,32 @@ namespace GuiVariant
                     }
                 }
             }
+        }
+
+        private void startRecognitionBtn_Click(object sender, RoutedEventArgs e)
+        {
+            parallelRecognition.Run();
+            Thread updaterThread = new Thread(collectionUpdater);
+            updaterThread.Start();
+            stopRecognitionBtn.IsEnabled = true;
+            startRecognitionBtn.IsEnabled = false;
+        }
+
+        void collectionUpdater(object data)
+        {
+            while (!parallelRecognition.HasFinished && parallelRecognition.CreationTimes.Count != 0)
+            {
+                while (parallelRecognition.CreationTimes.TryDequeue(out string item))
+                {
+                    ;
+                }
+                Thread.Sleep(500);
+            }
+        }
+
+        private void stopRecognitionBtn_Click(object sender, RoutedEventArgs e)
+        {
+
         }
     }
 
