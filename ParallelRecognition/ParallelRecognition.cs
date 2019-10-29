@@ -17,7 +17,7 @@ namespace ParallelRecognition
         ManualResetEvent areFreeWorkersEvent = new ManualResetEvent(false);
         InferenceSession session = null;
 
-        ConcurrentQueue<string> creationTimes = new ConcurrentQueue<string>();
+        ConcurrentQueue<ImageClassified> creationTimes = new ConcurrentQueue<ImageClassified>();
         private string directoryPath;
         private volatile bool hasFinished = true;
         private volatile bool isInterrupted = false;
@@ -25,7 +25,7 @@ namespace ParallelRecognition
         bool IsInterrupted { get => isInterrupted; set => isInterrupted = value; }
         public bool HasFinished { get => hasFinished; private set => hasFinished = value; }
         public string DirectoryPath { get => directoryPath; private set => directoryPath = value; }
-        public ConcurrentQueue<string> CreationTimes { get => creationTimes; }
+        public ConcurrentQueue<ImageClassified> CreationTimes { get => creationTimes; }
 
         public ParallelRecognition(string directoryPath)
         {
@@ -114,7 +114,7 @@ namespace ParallelRecognition
                         var max_val1 = sorted[0];
                         var max_ind1 = softmax.ToList().IndexOf(max_val1);
                         var result = "'" + max_ind1.ToString() + "' " + (Math.Round(max_val1, 2) * 100).ToString() + " %";
-                        CreationTimes.Enqueue(filePath + result);
+                        CreationTimes.Enqueue(new ImageClassified() { ImagePath = filePath, ClassName = result });
                     }
                 }
             }
@@ -140,5 +140,11 @@ namespace ParallelRecognition
             return data.ToTensor<float>();
         }
 
+    }
+
+    public class ImageClassified
+    {
+        public string ImagePath { get; set; }
+        public string ClassName { get; set; }
     }
 }

@@ -33,7 +33,7 @@ namespace ConsoleApp
             var parallelRecognition = data as ParallelRecognition.ParallelRecognition;
             while (!parallelRecognition.HasFinished && parallelRecognition.CreationTimes.Count != 0)
             {
-                while (parallelRecognition.CreationTimes.TryDequeue(out string item))
+                while (parallelRecognition.CreationTimes.TryDequeue(out ParallelRecognition.ImageClassified item))
                 {
                     Console.WriteLine(item);
                 }
