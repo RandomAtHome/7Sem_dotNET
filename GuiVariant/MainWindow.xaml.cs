@@ -65,19 +65,31 @@ namespace GuiVariant
                     directorySelectBtn.IsEnabled = false;
 
                     parallelRecognition = new ParallelRecognition.ParallelRecognition(DirectoryPath);
-                    var images = (FindResource("key_ObsImageItems") as ObservableImageItem);
-                    images.Clear();
-                    foreach (var filePath in Directory.GetFiles(DirectoryPath))
+                    var additionThread = new Thread(AddImagesToCollection)
                     {
-                        images.Add(new ImageItem
-                        {
-                            Image = new BitmapImage(new Uri(filePath)),
-                            PredictedClass = "TBD",
-                            ImagePath = filePath
-                        });
-                    }
+                        IsBackground = true
+                    };
+                    additionThread.Start();
                 }
             }
+        }
+
+        private void AddImagesToCollection()
+        {
+            var images = (FindResource("key_ObsImageItems") as ObservableImageItem);
+            Dispatcher.BeginInvoke(new Action(() =>
+            {
+                images.Clear();
+                foreach (var filePath in Directory.GetFiles(DirectoryPath))
+                {
+                    images.Add(new ImageItem()
+                    {
+                        Image = new BitmapImage(new Uri(filePath)),
+                        PredictedClass = "TBD",
+                        ImagePath = filePath
+                    });
+                }
+            }));
         }
 
         private void startRecognitionBtn_Click(object sender, RoutedEventArgs e)
@@ -94,7 +106,7 @@ namespace GuiVariant
             }
         }
 
-        void collectionUpdater()
+        private void collectionUpdater()
         {
             var images = (FindResource("key_ObsImageItems") as ObservableImageItem);
             var classes = (FindResource("key_ObsClassInfo") as ObservableClassInfo);
