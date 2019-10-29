@@ -15,7 +15,6 @@ namespace ParallelRecognition
     {
         ManualResetEvent hasFinishedEvent = new ManualResetEvent(true);
         ManualResetEvent areFreeWorkersEvent = new ManualResetEvent(false);
-        InferenceSession session = null;
 
         ConcurrentQueue<ImageClassified> creationTimes = new ConcurrentQueue<ImageClassified>();
         private string directoryPath;
@@ -30,7 +29,6 @@ namespace ParallelRecognition
         public ParallelRecognition(string directoryPath)
         {
             DirectoryPath = directoryPath;
-            session = new InferenceSession(@"DnnImageModels\ResNet50Onnx\resnet50v2.onnx");
         }
 
         public bool Run()
@@ -84,6 +82,7 @@ namespace ParallelRecognition
         void RecognizeContents(object obj)
         {
             var queue = obj as ConcurrentQueue<string>;
+            var session = new InferenceSession(@"DnnImageModels\ResNet50Onnx\resnet50v2.onnx");
             while (queue.TryDequeue(out string filePath))
             {
                 var inputMeta = session.InputMetadata;
@@ -139,7 +138,6 @@ namespace ParallelRecognition
             }
             return data.ToTensor<float>();
         }
-
     }
 
     public class ImageClassified

@@ -94,12 +94,12 @@ namespace GuiVariant
             }
         }
 
-        void collectionUpdater(object data)
+        void collectionUpdater()
         {
             var images = (FindResource("key_ObsImageItems") as ObservableImageItem);
             var classes = (FindResource("key_ObsClassInfo") as ObservableClassInfo);
             var imagesView = (FindResource("key_FilteredView") as CollectionViewSource);
-            while (!parallelRecognition.HasFinished && parallelRecognition.CreationTimes.Count != 0)
+            while (!parallelRecognition.HasFinished)
             {
                 while (parallelRecognition.CreationTimes.TryDequeue(out ParallelRecognition.ImageClassified item))
                 {
