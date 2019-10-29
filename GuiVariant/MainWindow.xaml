@@ -9,6 +9,7 @@
     <Window.Resources>
         <local:ObservableImageItem x:Key="key_ObsImageItems"/>
         <local:ObservableClassInfo x:Key="key_ObsClassInfo"/>
+        <CollectionViewSource x:Key="key_FilteredView" Source="{DynamicResource key_ObsImageItems}" Filter="CollectionViewSource_Filter"/>
         <DataTemplate x:Key="key_ImageItem">
             <StackPanel>
                 <Image Source="{Binding Image}" Stretch="Fill" Width="200" Height="200" HorizontalAlignment="Center" VerticalAlignment="Center" />
@@ -24,11 +25,11 @@
         </StackPanel>
         <StackPanel HorizontalAlignment="Left" Height="400" Margin="155,10,0,0" VerticalAlignment="Top" Width="202">
             <Label x:Name="classesDataTitle" Content="Class selector"/>
-            <ListBox x:Name="classesDataList" ItemsSource="{DynamicResource key_ObsClassInfo}" Margin="0,0,-0.4,0" VerticalAlignment="Bottom" Height="375" SelectionMode="Single"/>
+            <ListBox x:Name="classesDataList" ItemsSource="{DynamicResource key_ObsClassInfo}" Margin="0,0,-0.4,0" VerticalAlignment="Bottom" Height="375" SelectionMode="Single" SelectionChanged="classesDataList_SelectionChanged"/>
         </StackPanel>
         <StackPanel HorizontalAlignment="Left" Height="400" Margin="362,10,0,0" VerticalAlignment="Top" Width="422">
             <Label x:Name="imageListTitle" Content="Image List" Margin="0,0,0.4,0"/>
-            <ListBox x:Name="imageList" ItemsSource="{DynamicResource key_ObsImageItems}" Height="375" Margin="0,0,0.4,0" ItemTemplate="{DynamicResource key_ImageItem}"/>
+            <ListBox x:Name="imageList" DataContext="{DynamicResource key_FilteredView}" ItemsSource="{Binding}" Height="375" Margin="0,0,0.4,0" ItemTemplate="{DynamicResource key_ImageItem}"/>
         </StackPanel>
     </Grid>
 </Window>

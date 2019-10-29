@@ -30,6 +30,31 @@ namespace GuiVariant
             {
                 tmp.Add("Test");
             };
+            if (TryFindResource("key_ObsImageItems") is ObservableImageItem tmp2)
+            {
+                tmp2.Add(new ImageItem());
+            };
+        }
+
+        private void CollectionViewSource_Filter(object sender, FilterEventArgs e)
+        {
+            if (e.Item != null && classesDataList != null)
+            {
+                if (classesDataList.SelectedItem is null)
+                {
+                    e.Accepted = true;
+                    return;
+                }
+                e.Accepted = classesDataList.SelectedItem.ToString() == (e.Item as ImageItem).PredictedClass;
+            } else
+            {
+                e.Accepted = false;
+            }
+        }
+
+        private void classesDataList_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            (FindResource("key_FilteredView") as CollectionViewSource).View.Refresh();
         }
     }
 
