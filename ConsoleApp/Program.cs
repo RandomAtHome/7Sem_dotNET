@@ -25,18 +25,19 @@ namespace ConsoleApp
             Console.WriteLine("Received interrupt!");
             parallelRecognition.Stop();
             loopThread.Join();
+            Console.WriteLine("Printed all queue");
         }
 
         static void printLoop(object data)
         {
             var parallelRecognition = data as ParallelRecognition.ParallelRecognition;
-            while (!parallelRecognition.HasFinished)
+            while (!parallelRecognition.HasFinished && parallelRecognition.CreationTimes.Count != 0)
             {
-                Thread.Sleep(500);
                 while (parallelRecognition.CreationTimes.TryDequeue(out string item))
                 {
                     Console.WriteLine(item);
                 }
+                Thread.Sleep(500);
             }
         }
     }
