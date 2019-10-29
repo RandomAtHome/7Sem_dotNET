@@ -30,14 +30,6 @@ namespace GuiVariant
         public MainWindow()
         {
             InitializeComponent();
-            if (TryFindResource("key_ObsClassInfo") is ObservableClassInfo tmp)
-            {
-                tmp.Add(new ClassInfo() { ClassName = "Test", Count = 3});
-            };
-            if (TryFindResource("key_ObsImageItems") is ObservableImageItem tmp2)
-            {
-                tmp2.Add(new ImageItem());
-            };
         }
 
         private void CollectionViewSource_Filter(object sender, FilterEventArgs e)
@@ -90,20 +82,44 @@ namespace GuiVariant
 
         private void startRecognitionBtn_Click(object sender, RoutedEventArgs e)
         {
-            parallelRecognition.Run();
-            Thread updaterThread = new Thread(collectionUpdater);
-            updaterThread.Start();
-            stopRecognitionBtn.IsEnabled = true;
-            startRecognitionBtn.IsEnabled = false;
+            if (parallelRecognition.Run())
+            {
+                var updaterThread = new Thread(collectionUpdater)
+                {
+                    IsBackground = true
+                };
+                updaterThread.Start();
+                stopRecognitionBtn.IsEnabled = true;
+                startRecognitionBtn.IsEnabled = false;
+            }
         }
 
         void collectionUpdater(object data)
         {
+            var images = (FindResource("key_ObsImageItems") as ObservableImageItem);
+            var classes = (FindResource("key_ObsClassInfo") as ObservableClassInfo);
+            var imagesView = (FindResource("key_FilteredView") as CollectionViewSource);
             while (!parallelRecognition.HasFinished && parallelRecognition.CreationTimes.Count != 0)
             {
-                while (parallelRecognition.CreationTimes.TryDequeue(out string item))
+                while (parallelRecognition.CreationTimes.TryDequeue(out ParallelRecognition.ImageClassified item))
                 {
-                    ;
+                    Dispatcher.BeginInvoke(new Action(() =>
+                    {
+                        var itemToUpdate = images.FirstOrDefault(i => i.ImagePath == item.ImagePath);
+                        if (itemToUpdate != null)
+                        {
+                            itemToUpdate.PredictedClass = item.ClassName;
+                            imagesView.View.Refresh();
+                        }
+                        var classToUpdate = classes.FirstOrDefault(i => i.ClassName == item.ClassName);
+                        if (classToUpdate != null)
+                        {
+                            classToUpdate.Count++;
+                        } else
+                        {
+                            classes.Add(new ClassInfo() { ClassName = item.ClassName, Count = 1 });
+                        }
+                    }));
                 }
                 Thread.Sleep(500);
             }
@@ -111,7 +127,10 @@ namespace GuiVariant
 
         private void stopRecognitionBtn_Click(object sender, RoutedEventArgs e)
         {
-
+            parallelRecognition.Stop();
+            directorySelectBtn.IsEnabled = true;
+            startRecognitionBtn.IsEnabled = false;
+            stopRecognitionBtn.IsEnabled = false;
         }
     }
 

@@ -37,6 +37,9 @@ namespace ParallelRecognition
         {
             try
             {
+                hasFinishedEvent.Reset();
+                HasFinished = false;
+                IsInterrupted = false;
                 new Thread(ManageJobs)
                 {
                     IsBackground = true
@@ -51,9 +54,6 @@ namespace ParallelRecognition
 
         void ManageJobs(object filenames)
         {
-            hasFinishedEvent.Reset();
-            HasFinished = false;
-            IsInterrupted = false;
             var queue = new ConcurrentQueue<string>(filenames as string[]);
             int workerThreadsCount = Environment.ProcessorCount;
             var workers = new Thread[workerThreadsCount];
