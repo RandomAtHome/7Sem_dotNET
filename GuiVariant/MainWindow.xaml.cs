@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -15,14 +17,29 @@ using System.Windows.Shapes;
 
 namespace GuiVariant
 {
-    /// <summary>
-    /// Interaction logic for MainWindow.xaml
-    /// </summary>
     public partial class MainWindow : Window
     {
+        private string directoryPath = null;
+        string DirectoryPath { get => directoryPath; set => directoryPath = value; }
+
+        public ICollectionView ItemsCollectionView { get; set; }
         public MainWindow()
         {
             InitializeComponent();
+            if (TryFindResource("key_ObsClassInfo") is ObservableClassInfo tmp)
+            {
+                tmp.Add("Test");
+            };
         }
+    }
+
+    public class ObservableImageItem : ObservableCollection<ImageItem> {}
+    public class ObservableClassInfo : ObservableCollection<string> {}
+
+    public class ImageItem
+    {
+        public BitmapImage Image { get; set; }
+        public string ImagePath { get; set; }
+        public string PredictedClass { get; set; }
     }
 }
