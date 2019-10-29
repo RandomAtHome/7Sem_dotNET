@@ -7,6 +7,18 @@
         mc:Ignorable="d"
         Title="MainWindow" Height="450" Width="800">
     <Grid>
-        
+        <StackPanel HorizontalAlignment="Left" Height="400" Margin="10,10,0,0" VerticalAlignment="Top" Width="140">
+            <Button x:Name="directorySelectBtn" Content="Select Directory"/>
+            <Button x:Name="startRecognitionBtn" Content="Start Recognition"/>
+            <Button x:Name="stopRecognitionBtn" Content="Finish Recognition"/>
+        </StackPanel>
+        <StackPanel HorizontalAlignment="Left" Height="400" Margin="155,10,0,0" VerticalAlignment="Top" Width="202">
+            <Label x:Name="classesDataTitle" Content="Class selector"/>
+            <ListBox x:Name="classesDataList" Margin="0,0,-0.4,0" VerticalAlignment="Bottom" Height="375"/>
+        </StackPanel>
+        <StackPanel HorizontalAlignment="Left" Height="400" Margin="362,10,0,0" VerticalAlignment="Top" Width="422">
+            <Label x:Name="imageListTitle" Content="Image List" Margin="0,0,0.4,0"/>
+            <ListBox x:Name="imageList" Height="375" Margin="0,0,0.4,0"/>
+        </StackPanel>
     </Grid>
 </Window>
