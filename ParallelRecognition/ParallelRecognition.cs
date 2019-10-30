@@ -50,7 +50,6 @@ namespace ParallelRecognition
             var queue = new ConcurrentQueue<string>(filenames as string[]);
             int workerThreadsCount = Environment.ProcessorCount;
             var workers = new Thread[workerThreadsCount];
-            session = new InferenceSession(@"DnnImageModels\ResNet50Onnx\resnet50v2.onnx");
             for (int i = 0; i < workers.Length; i++)
             {
                 workers[i] = new Thread(RecognizeContents)
@@ -66,7 +65,6 @@ namespace ParallelRecognition
             HasFinished = true;
             IsInterrupted = false;
             hasFinishedEvent.Set();
-            session.Dispose();
         }
 
         public bool Stop()
@@ -79,41 +77,44 @@ namespace ParallelRecognition
         void RecognizeContents(object obj)
         {
             var queue = obj as ConcurrentQueue<string>;
-            while (queue.TryDequeue(out string filePath))
+            using (var session = new InferenceSession(@"DnnImageModels\ResNet50Onnx\resnet50v2.onnx"))
             {
-                var inputMeta = session.InputMetadata;
-                var container = new List<NamedOnnxValue>();
-                if (IsInterrupted) break;
-                var tensor = LoadTensorFromFile(filePath);
-                foreach (var name in inputMeta.Keys)
+                while (queue.TryDequeue(out string filePath))
                 {
-                    container.Add(NamedOnnxValue.CreateFromTensor<float>(name, tensor));
-                }
-                if (IsInterrupted) break;
-                using (var results = session.Run(container))
-                {
-                    foreach (var r in results)
+                    var inputMeta = session.InputMetadata;
+                    var container = new List<NamedOnnxValue>();
+                    if (IsInterrupted) break;
+                    var tensor = LoadTensorFromFile(filePath);
+                    foreach (var name in inputMeta.Keys)
                     {
-                        var tmp = r.AsEnumerable<float>().ToArray();
-                        double[] exp = new double[tmp.Length];
-                        int i = 0;
-                        foreach (var x in tmp)
+                        container.Add(NamedOnnxValue.CreateFromTensor<float>(name, tensor));
+                    }
+                    if (IsInterrupted) break;
+                    using (var results = session.Run(container))
+                    {
+                        foreach (var r in results)
                         {
-                            exp[i++] = Math.Exp((double)x);
+                            var tmp = r.AsEnumerable<float>().ToArray();
+                            double[] exp = new double[tmp.Length];
+                            int i = 0;
+                            foreach (var x in tmp)
+                            {
+                                exp[i++] = Math.Exp((double)x);
+                            }
+                            var sum_exp = exp.Sum();
+                            var softmax = exp.Select(j => j / sum_exp);
+                            double[] sorted = new double[tmp.Length];
+                            Array.Copy(softmax.ToArray(), sorted, tmp.Length);
+                            Array.Sort(sorted, (x, y) => -x.CompareTo(y));
+                            var max_val1 = sorted[0];
+                            var max_ind1 = softmax.ToList().IndexOf(max_val1);
+                            CreationTimes.Enqueue(new ImageClassified()
+                            {
+                                ImagePath = filePath,
+                                ClassName = max_ind1.ToString(),
+                                Certainty = max_val1,
+                            });
                         }
-                        var sum_exp = exp.Sum();
-                        var softmax = exp.Select(j => j / sum_exp);
-                        double[] sorted = new double[tmp.Length];
-                        Array.Copy(softmax.ToArray(), sorted, tmp.Length);
-                        Array.Sort(sorted, (x, y) => -x.CompareTo(y));
-                        var max_val1 = sorted[0];
-                        var max_ind1 = softmax.ToList().IndexOf(max_val1);
-                        CreationTimes.Enqueue(new ImageClassified()
-                        {
-                            ImagePath = filePath,
-                            ClassName = max_ind1.ToString(),
-                            Certainty = max_val1,
-                        });
                     }
                 }
             }
