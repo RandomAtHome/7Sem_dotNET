@@ -94,20 +94,15 @@ namespace ParallelRecognition
                     {
                         foreach (var r in results)
                         {
-                            var tmp = r.AsEnumerable<float>().ToArray();
-                            double[] exp = new double[tmp.Length];
+                            double[] exp = new double[r.AsEnumerable<float>().Count()];
                             int i = 0;
-                            foreach (var x in tmp)
+                            foreach (var val in r.AsEnumerable<float>())
                             {
-                                exp[i++] = Math.Exp((double)x);
+                                exp[i++] = Math.Exp(val);
                             }
-                            var sum_exp = exp.Sum();
-                            var softmax = exp.Select(j => j / sum_exp);
-                            double[] sorted = new double[tmp.Length];
-                            Array.Copy(softmax.ToArray(), sorted, tmp.Length);
-                            Array.Sort(sorted, (x, y) => -x.CompareTo(y));
-                            var max_val1 = sorted[0];
-                            var max_ind1 = softmax.ToList().IndexOf(max_val1);
+                            var softmax = exp.Select(j => j / exp.Sum()).ToArray();
+                            var max_val1 = softmax.Max();
+                            var max_ind1 = Array.IndexOf(softmax, max_val1);
                             CreationTimes.Enqueue(new ImageClassified()
                             {
                                 ImagePath = filePath,
