@@ -1,22 +1,13 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
 using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
-using ParallelRecognition;
 
 namespace GuiVariant
 {
@@ -42,7 +33,8 @@ namespace GuiVariant
                     return;
                 }
                 e.Accepted = (classesDataList.SelectedItem as ClassInfo).ClassName == (e.Item as ImageItem).PredictedClass;
-            } else
+            }
+            else
             {
                 e.Accepted = false;
             }
@@ -77,19 +69,17 @@ namespace GuiVariant
         private void AddImagesToCollection()
         {
             var images = (FindResource("key_ObsImageItems") as ObservableImageItem);
-            Dispatcher.BeginInvoke(new Action(() =>
+            Dispatcher.BeginInvoke(new Action(() => images.Clear()));
+            foreach (var filePath in Directory.GetFiles(DirectoryPath))
             {
-                images.Clear();
-                foreach (var filePath in Directory.GetFiles(DirectoryPath))
+                Dispatcher.BeginInvoke(new Action(() => images.Add(new ImageItem()
                 {
-                    images.Add(new ImageItem()
-                    {
-                        Image = new BitmapImage(new Uri(filePath)),
-                        PredictedClass = "TBD",
-                        ImagePath = filePath
-                    });
-                }
-            }));
+                    Image = new BitmapImage(new Uri(filePath)),
+                    PredictedClass = "TBD",
+                    ImagePath = filePath
+                })
+                ));
+            }
         }
 
         private void startRecognitionBtn_Click(object sender, RoutedEventArgs e)
@@ -127,7 +117,8 @@ namespace GuiVariant
                         if (classToUpdate != null)
                         {
                             classToUpdate.Count++;
-                        } else
+                        }
+                        else
                         {
                             classes.Add(new ClassInfo() { ClassName = item.ClassName, Count = 1 });
                         }
@@ -146,8 +137,8 @@ namespace GuiVariant
         }
     }
 
-    public class ObservableImageItem : ObservableCollection<ImageItem> {}
-    public class ObservableClassInfo : ObservableCollection<ClassInfo> {}
+    public class ObservableImageItem : ObservableCollection<ImageItem> { }
+    public class ObservableClassInfo : ObservableCollection<ClassInfo> { }
 
     public class ImageItem
     {
