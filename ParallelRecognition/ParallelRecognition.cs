@@ -116,8 +116,8 @@ namespace ParallelRecognition
 
         static DenseTensor<float> LoadTensorFromFile(string filename)
         {
-            Bitmap img = new Bitmap(filename);
-            img = new Bitmap(img, new Size(224, 224));
+            Bitmap tmp = new Bitmap(filename);
+            Bitmap img = new Bitmap(tmp, new Size(224, 224));
             float[,,,] data = new float[1, 3, img.Height, img.Width];
             float[] mean = new float[3] { 0.485F, 0.456F, 0.406F };
             float[] std = new float[3] { 0.229F, 0.224F, 0.224F };
@@ -130,6 +130,8 @@ namespace ParallelRecognition
                     data[0, 2, j, i] = ((float)img.GetPixel(i, j).B / 255 - mean[2]) / std[2];
                 }
             }
+            tmp.Dispose();
+            img.Dispose();
             return data.ToTensor<float>();
         }
     }

@@ -14,8 +14,8 @@ namespace GuiVariant
     public partial class MainWindow : Window
     {
         private ParallelRecognition.ParallelRecognition parallelRecognition = null;
-        private string directoryPath = null;
-        string DirectoryPath { get => directoryPath; set => directoryPath = value; }
+
+        string DirectoryPath { get; set; } = null;
 
         public ICollectionView ItemsCollectionView { get; set; }
         public MainWindow()
