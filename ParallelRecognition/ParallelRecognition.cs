@@ -14,7 +14,6 @@ namespace ParallelRecognition
     public class ParallelRecognition
     {
         readonly ManualResetEvent hasFinishedEvent = new ManualResetEvent(true);
-        private volatile InferenceSession session = null;
 
         bool IsInterrupted { get; set; } = false;
         public bool HasFinished { get; private set; } = true;
