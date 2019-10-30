@@ -117,6 +117,7 @@ namespace GuiVariant
                         if (classToUpdate != null)
                         {
                             classToUpdate.Count++;
+                            classesDataList.Items.Refresh();
                         }
                         else
                         {
