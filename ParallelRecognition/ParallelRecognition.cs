@@ -13,19 +13,13 @@ namespace ParallelRecognition
 {
     public class ParallelRecognition
     {
-        ManualResetEvent hasFinishedEvent = new ManualResetEvent(true);
-
-        ConcurrentQueue<ImageClassified> creationTimes = new ConcurrentQueue<ImageClassified>();
-        private string directoryPath;
-        private volatile bool hasFinished = true;
-        private volatile bool isInterrupted = false;
-
+        readonly ManualResetEvent hasFinishedEvent = new ManualResetEvent(true);
         private volatile InferenceSession session = null;
 
-        bool IsInterrupted { get => isInterrupted; set => isInterrupted = value; }
-        public bool HasFinished { get => hasFinished; private set => hasFinished = value; }
-        public string DirectoryPath { get => directoryPath; private set => directoryPath = value; }
-        public ConcurrentQueue<ImageClassified> CreationTimes { get => creationTimes; }
+        bool IsInterrupted { get; set; } = false;
+        public bool HasFinished { get; private set; } = true;
+        public string DirectoryPath { get; private set; }
+        public ConcurrentQueue<ImageClassified> CreationTimes { get; } = new ConcurrentQueue<ImageClassified>();
 
         public ParallelRecognition(string directoryPath)
         {
