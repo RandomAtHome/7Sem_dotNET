@@ -14,7 +14,6 @@ namespace ParallelRecognition
     public class ParallelRecognition
     {
         ManualResetEvent hasFinishedEvent = new ManualResetEvent(true);
-        ManualResetEvent areFreeWorkersEvent = new ManualResetEvent(false);
 
         ConcurrentQueue<ImageClassified> creationTimes = new ConcurrentQueue<ImageClassified>();
         private string directoryPath;
@@ -82,42 +81,43 @@ namespace ParallelRecognition
         void RecognizeContents(object obj)
         {
             var queue = obj as ConcurrentQueue<string>;
-            var session = new InferenceSession(@"DnnImageModels\ResNet50Onnx\resnet50v2.onnx");
-            while (queue.TryDequeue(out string filePath))
+            using (var session = new InferenceSession(@"DnnImageModels\ResNet50Onnx\resnet50v2.onnx"))
             {
-                var inputMeta = session.InputMetadata;
-                var container = new List<NamedOnnxValue>();
-                if (IsInterrupted) break;
-                var tensor = LoadTensorFromFile(filePath);
-                foreach (var name in inputMeta.Keys)
+                while (queue.TryDequeue(out string filePath))
                 {
-                    container.Add(NamedOnnxValue.CreateFromTensor<float>(name, tensor));
-                }
-                if (IsInterrupted) break;
-                using (var results = session.Run(container))
-                {
-                    foreach (var r in results)
+                    var inputMeta = session.InputMetadata;
+                    var container = new List<NamedOnnxValue>();
+                    if (IsInterrupted) break;
+                    var tensor = LoadTensorFromFile(filePath);
+                    foreach (var name in inputMeta.Keys)
                     {
-                        var tmp = r.AsEnumerable<float>().ToArray();
-                        double[] exp = new double[tmp.Length];
-                        int i = 0;
-                        foreach (var x in tmp)
+                        container.Add(NamedOnnxValue.CreateFromTensor<float>(name, tensor));
+                    }
+                    if (IsInterrupted) break;
+                    using (var results = session.Run(container))
+                    {
+                        foreach (var r in results)
                         {
-                            exp[i++] = Math.Exp((double)x);
+                            var tmp = r.AsEnumerable<float>().ToArray();
+                            double[] exp = new double[tmp.Length];
+                            int i = 0;
+                            foreach (var x in tmp)
+                            {
+                                exp[i++] = Math.Exp((double)x);
+                            }
+                            var sum_exp = exp.Sum();
+                            var softmax = exp.Select(j => j / sum_exp);
+                            double[] sorted = new double[tmp.Length];
+                            Array.Copy(softmax.ToArray(), sorted, tmp.Length);
+                            Array.Sort(sorted, (x, y) => -x.CompareTo(y));
+                            var max_val1 = sorted[0];
+                            var max_ind1 = softmax.ToList().IndexOf(max_val1);
+                            var result = "'" + max_ind1.ToString() + "' " + (Math.Round(max_val1, 2) * 100).ToString() + " %";
+                            CreationTimes.Enqueue(new ImageClassified() { ImagePath = filePath, ClassName = result });
                         }
-                        var sum_exp = exp.Sum();
-                        var softmax = exp.Select(j => j / sum_exp);
-                        double[] sorted = new double[tmp.Length];
-                        Array.Copy(softmax.ToArray(), sorted, tmp.Length);
-                        Array.Sort(sorted, (x, y) => -x.CompareTo(y));
-                        var max_val1 = sorted[0];
-                        var max_ind1 = softmax.ToList().IndexOf(max_val1);
-                        var result = "'" + max_ind1.ToString() + "' " + (Math.Round(max_val1, 2) * 100).ToString() + " %";
-                        CreationTimes.Enqueue(new ImageClassified() { ImagePath = filePath, ClassName = result });
                     }
                 }
             }
-            areFreeWorkersEvent.Set();
         }
 
         static DenseTensor<float> LoadTensorFromFile(string filename)
