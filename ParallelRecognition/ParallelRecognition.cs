@@ -20,7 +20,7 @@ namespace ParallelRecognition
         private volatile bool hasFinished = true;
         private volatile bool isInterrupted = false;
 
-        private InferenceSession session = null;
+        private volatile InferenceSession session = null;
 
         bool IsInterrupted { get => isInterrupted; set => isInterrupted = value; }
         public bool HasFinished { get => hasFinished; private set => hasFinished = value; }
@@ -85,11 +85,6 @@ namespace ParallelRecognition
         void RecognizeContents(object obj)
         {
             var queue = obj as ConcurrentQueue<string>;
-            while (session is null)
-            {
-                Thread.Sleep(500);
-            }
-            if (IsInterrupted) return;
             while (queue.TryDequeue(out string filePath))
             {
                 var inputMeta = session.InputMetadata;
