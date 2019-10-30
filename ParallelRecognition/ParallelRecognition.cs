@@ -112,8 +112,12 @@ namespace ParallelRecognition
                             Array.Sort(sorted, (x, y) => -x.CompareTo(y));
                             var max_val1 = sorted[0];
                             var max_ind1 = softmax.ToList().IndexOf(max_val1);
-                            var result = "'" + max_ind1.ToString() + "' " + (Math.Round(max_val1, 2) * 100).ToString() + " %";
-                            CreationTimes.Enqueue(new ImageClassified() { ImagePath = filePath, ClassName = result });
+                            CreationTimes.Enqueue(new ImageClassified()
+                            {
+                                ImagePath = filePath,
+                                ClassName = max_ind1.ToString(),
+                                Certainty = max_val1,
+                            });
                         }
                     }
                 }
@@ -144,5 +148,6 @@ namespace ParallelRecognition
     {
         public string ImagePath { get; set; }
         public string ClassName { get; set; }
+        public double Certainty { get; set; }
     }
 }
