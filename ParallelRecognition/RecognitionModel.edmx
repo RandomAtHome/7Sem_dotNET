@@ -1,0 +1,75 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<edmx:Edmx Version="3.0" xmlns:edmx="http://schemas.microsoft.com/ado/2009/11/edmx">
+  <!-- EF Runtime content -->
+  <edmx:Runtime>
+    <!-- SSDL content -->
+    <edmx:StorageModels>
+      <Schema xmlns="http://schemas.microsoft.com/ado/2009/11/edm/ssdl" Namespace="RecognitionModel.Store" Alias="Self" Provider="System.Data.SqlClient" ProviderManifestToken="2005">
+        <EntityContainer Name="RecognitionModelTargetContainer" >
+        </EntityContainer>
+      </Schema>
+    </edmx:StorageModels>
+    <!-- CSDL content -->
+    <edmx:ConceptualModels>
+      <Schema xmlns="http://schemas.microsoft.com/ado/2009/11/edm" xmlns:cg="http://schemas.microsoft.com/ado/2006/04/codegeneration" xmlns:store="http://schemas.microsoft.com/ado/2007/12/edm/EntityStoreSchemaGenerator" Namespace="RecognitionModel" Alias="Self" xmlns:annotation="http://schemas.microsoft.com/ado/2009/02/edm/annotation" annotation:UseStrongSpatialTypes="false">
+        <EntityContainer Name="RecognitionModelContainer" annotation:LazyLoadingEnabled="true">
+          <EntitySet Name="Results" EntityType="RecognitionModel.Results" />
+          <EntitySet Name="Blobs" EntityType="RecognitionModel.Blobs" />
+          <AssociationSet Name="ResultsBlobs" Association="RecognitionModel.ResultsBlobs">
+            <End Role="Results" EntitySet="Results" />
+            <End Role="Blobs" EntitySet="Blobs" />
+          </AssociationSet>
+        </EntityContainer>
+        <EntityType Name="Results">
+          <Key>
+            <PropertyRef Name="Id" />
+          </Key>
+          <Property Name="Id" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="ClassId" Type="Int32" Nullable="false" />
+          <Property Name="FileHash" Type="Int64" Nullable="false" />
+          <Property Name="Probability" Type="Double" Nullable="false" />
+          <NavigationProperty Name="Blob" Relationship="RecognitionModel.ResultsBlobs" FromRole="Results" ToRole="Blobs" />
+        </EntityType>
+        <EntityType Name="Blobs">
+          <Key>
+            <PropertyRef Name="Id" />
+          </Key>
+          <Property Name="Id" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="FileContent" Type="Binary" Nullable="false" MaxLength="Max" />
+          <NavigationProperty Name="Result" Relationship="RecognitionModel.ResultsBlobs" FromRole="Blobs" ToRole="Results" />
+        </EntityType>
+        <Association Name="ResultsBlobs">
+          <End Type="RecognitionModel.Results" Role="Results" Multiplicity="1" />
+          <End Type="RecognitionModel.Blobs" Role="Blobs" Multiplicity="1" />
+        </Association>
+      </Schema>
+    </edmx:ConceptualModels>
+    <!-- C-S mapping content -->
+    <edmx:Mappings>
+      <Mapping xmlns="http://schemas.microsoft.com/ado/2009/11/mapping/cs" Space="C-S">
+        <Alias Key="Model" Value="RecognitionModel" />
+        <Alias Key="Target" Value="RecognitionModel.Store" />
+        <EntityContainerMapping CdmEntityContainer="RecognitionModelContainer" StorageEntityContainer="RecognitionModelTargetContainer">
+        </EntityContainerMapping>
+      </Mapping>
+    </edmx:Mappings>
+  </edmx:Runtime>
+  <!-- EF Designer content (DO NOT EDIT MANUALLY BELOW HERE) -->
+  <edmx:Designer xmlns="http://schemas.microsoft.com/ado/2009/11/edmx">
+    <edmx:Connection>
+      <DesignerInfoPropertySet>
+        <DesignerProperty Name="MetadataArtifactProcessing" Value="EmbedInOutputAssembly" />
+      </DesignerInfoPropertySet>
+    </edmx:Connection>
+    <edmx:Options>
+      <DesignerInfoPropertySet>
+        <DesignerProperty Name="ValidateOnBuild" Value="true" />
+        <DesignerProperty Name="EnablePluralization" Value="True" />
+        <DesignerProperty Name="CodeGenerationStrategy" Value="None" />
+      </DesignerInfoPropertySet>
+    </edmx:Options>
+    <!-- Diagram content (shape and connector positions) -->
+    <edmx:Diagrams>
+    </edmx:Diagrams>
+  </edmx:Designer>
+</edmx:Edmx>
