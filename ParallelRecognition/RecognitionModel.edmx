@@ -4,11 +4,45 @@
   <edmx:Runtime>
     <!-- SSDL content -->
     <edmx:StorageModels>
-      <Schema xmlns="http://schemas.microsoft.com/ado/2009/11/edm/ssdl" Namespace="RecognitionModel.Store" Alias="Self" Provider="System.Data.SqlClient" ProviderManifestToken="2005">
-        <EntityContainer Name="RecognitionModelTargetContainer" >
-        </EntityContainer>
-      </Schema>
-    </edmx:StorageModels>
+    <Schema Namespace="RecognitionModel.Store" Alias="Self" Provider="System.Data.SqlClient" ProviderManifestToken="2012" xmlns:store="http://schemas.microsoft.com/ado/2007/12/edm/EntityStoreSchemaGenerator" xmlns="http://schemas.microsoft.com/ado/2009/11/edm/ssdl">
+  <EntityContainer Name="RecognitionModelStoreContainer">
+    <EntitySet Name="Results" EntityType="RecognitionModel.Store.Results" store:Type="Tables" Schema="dbo" />
+    <EntitySet Name="Blobs" EntityType="RecognitionModel.Store.Blobs" store:Type="Tables" Schema="dbo" />
+    <AssociationSet Name="ResultsBlobs" Association="RecognitionModel.Store.ResultsBlobs">
+      <End Role="Results" EntitySet="Results" />
+      <End Role="Blobs" EntitySet="Blobs" />
+    </AssociationSet>
+  </EntityContainer>
+  <EntityType Name="Results">
+    <Key>
+      <PropertyRef Name="Id" />
+    </Key>
+    <Property Name="Id" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
+    <Property Name="ClassId" Type="int" Nullable="false" />
+    <Property Name="FileHash" Type="bigint" Nullable="false" />
+    <Property Name="Probability" Type="float" Nullable="false" />
+    <Property Name="Blob_Id" Type="int" Nullable="false" />
+  </EntityType>
+  <EntityType Name="Blobs">
+    <Key>
+      <PropertyRef Name="Id" />
+    </Key>
+    <Property Name="Id" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
+    <Property Name="FileContent" Type="varbinary(max)" Nullable="false" />
+  </EntityType>
+  <Association Name="ResultsBlobs">
+    <End Role="Results" Type="RecognitionModel.Store.Results" Multiplicity="*" />
+    <End Role="Blobs" Type="RecognitionModel.Store.Blobs" Multiplicity="1" />
+    <ReferentialConstraint>
+      <Principal Role="Blobs">
+        <PropertyRef Name="Id" />
+      </Principal>
+      <Dependent Role="Results">
+        <PropertyRef Name="Blob_Id" />
+      </Dependent>
+    </ReferentialConstraint>
+  </Association>
+</Schema></edmx:StorageModels>
     <!-- CSDL content -->
     <edmx:ConceptualModels>
       <Schema xmlns="http://schemas.microsoft.com/ado/2009/11/edm" xmlns:cg="http://schemas.microsoft.com/ado/2006/04/codegeneration" xmlns:store="http://schemas.microsoft.com/ado/2007/12/edm/EntityStoreSchemaGenerator" Namespace="RecognitionModel" Alias="Self" xmlns:annotation="http://schemas.microsoft.com/ado/2009/02/edm/annotation" annotation:UseStrongSpatialTypes="false">
@@ -46,13 +80,36 @@
     </edmx:ConceptualModels>
     <!-- C-S mapping content -->
     <edmx:Mappings>
-      <Mapping xmlns="http://schemas.microsoft.com/ado/2009/11/mapping/cs" Space="C-S">
-        <Alias Key="Model" Value="RecognitionModel" />
-        <Alias Key="Target" Value="RecognitionModel.Store" />
-        <EntityContainerMapping CdmEntityContainer="RecognitionModelContainer" StorageEntityContainer="RecognitionModelTargetContainer">
-        </EntityContainerMapping>
-      </Mapping>
-    </edmx:Mappings>
+    <Mapping Space="C-S" xmlns="http://schemas.microsoft.com/ado/2009/11/mapping/cs">
+  <EntityContainerMapping StorageEntityContainer="RecognitionModelStoreContainer" CdmEntityContainer="RecognitionModelContainer">
+    <EntitySetMapping Name="Results">
+      <EntityTypeMapping TypeName="IsTypeOf(RecognitionModel.Results)">
+        <MappingFragment StoreEntitySet="Results">
+          <ScalarProperty Name="Id" ColumnName="Id" />
+          <ScalarProperty Name="ClassId" ColumnName="ClassId" />
+          <ScalarProperty Name="FileHash" ColumnName="FileHash" />
+          <ScalarProperty Name="Probability" ColumnName="Probability" />
+        </MappingFragment>
+      </EntityTypeMapping>
+    </EntitySetMapping>
+    <EntitySetMapping Name="Blobs">
+      <EntityTypeMapping TypeName="IsTypeOf(RecognitionModel.Blobs)">
+        <MappingFragment StoreEntitySet="Blobs">
+          <ScalarProperty Name="Id" ColumnName="Id" />
+          <ScalarProperty Name="FileContent" ColumnName="FileContent" />
+        </MappingFragment>
+      </EntityTypeMapping>
+    </EntitySetMapping>
+    <AssociationSetMapping Name="ResultsBlobs" TypeName="RecognitionModel.ResultsBlobs" StoreEntitySet="Results">
+      <EndProperty Name="Blobs">
+        <ScalarProperty Name="Id" ColumnName="Blob_Id" />
+      </EndProperty>
+      <EndProperty Name="Results">
+        <ScalarProperty Name="Id" ColumnName="Id" />
+      </EndProperty>
+    </AssociationSetMapping>
+  </EntityContainerMapping>
+</Mapping></edmx:Mappings>
   </edmx:Runtime>
   <!-- EF Designer content (DO NOT EDIT MANUALLY BELOW HERE) -->
   <edmx:Designer xmlns="http://schemas.microsoft.com/ado/2009/11/edmx">
@@ -66,6 +123,7 @@
         <DesignerProperty Name="ValidateOnBuild" Value="true" />
         <DesignerProperty Name="EnablePluralization" Value="True" />
         <DesignerProperty Name="CodeGenerationStrategy" Value="None" />
+        <DesignerProperty Name="UseLegacyProvider" Value="False" />
       </DesignerInfoPropertySet>
     </edmx:Options>
     <!-- Diagram content (shape and connector positions) -->

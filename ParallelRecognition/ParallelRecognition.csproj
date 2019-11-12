@@ -47,12 +47,28 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Blobs.cs">
+      <DependentUpon>RecognitionModel.tt</DependentUpon>
+    </Compile>
     <Compile Include="ParallelRecognition.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="RecognitionModel.Context.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>RecognitionModel.Context.tt</DependentUpon>
+    </Compile>
+    <Compile Include="RecognitionModel.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>RecognitionModel.tt</DependentUpon>
+    </Compile>
     <Compile Include="RecognitionModel.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
       <DependentUpon>RecognitionModel.edmx</DependentUpon>
+    </Compile>
+    <Compile Include="Results.cs">
+      <DependentUpon>RecognitionModel.tt</DependentUpon>
     </Compile>
   </ItemGroup>
   <ItemGroup>
@@ -80,6 +96,19 @@
     <None Include="RecognitionModel.edmx.diagram">
       <DependentUpon>RecognitionModel.edmx</DependentUpon>
     </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="RecognitionModel.Context.tt">
+      <Generator>TextTemplatingFileGenerator</Generator>
+      <LastGenOutput>RecognitionModel.Context.cs</LastGenOutput>
+      <DependentUpon>RecognitionModel.edmx</DependentUpon>
+    </Content>
+    <Content Include="RecognitionModel.edmx.sql" />
+    <Content Include="RecognitionModel.tt">
+      <Generator>TextTemplatingFileGenerator</Generator>
+      <LastGenOutput>RecognitionModel.cs</LastGenOutput>
+      <DependentUpon>RecognitionModel.edmx</DependentUpon>
+    </Content>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
