@@ -7,10 +7,9 @@ using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Numerics.Tensors;
-using System.Runtime.Serialization.Formatters.Binary;
 using System.Threading;
 
-namespace ParallelRecognition
+namespace Recognition
 {
     public class ParallelRecognition
     {
@@ -116,15 +115,15 @@ namespace ParallelRecognition
                             using (var db = new RecognitionModelContainer())
                             {
                                 db.Results.Add(new Results()
+                                {
+                                    ClassId = max_ind1,
+                                    Probability = max_val1,
+                                    FileHash = tensorHash,
+                                    Blob = new Blobs()
                                     {
-                                        ClassId = max_ind1,
-                                        Probability = max_val1,
-                                        FileHash = tensorHash,
-                                        Blob = new Blobs()
-                                        {
-                                            FileContent = fileBytes
-                                        },
-                                    });
+                                        FileContent = fileBytes
+                                    },
+                                });
                                 db.SaveChanges();
                             }
                             CreationTimes.Enqueue(new ImageClassified()

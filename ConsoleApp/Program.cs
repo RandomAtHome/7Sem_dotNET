@@ -9,7 +9,7 @@ namespace ConsoleApp
         {
             //var dirPath = Console.ReadLine();
             var dirPath = @"D:\Coding\Task1_ParallelRecognition\ILSVRC2012_img_val";
-            var parallelRecognition = new ParallelRecognition.ParallelRecognition(dirPath);
+            var parallelRecognition = new Recognition.ParallelRecognition(dirPath);
             if (!parallelRecognition.Run())
             {
                 Console.WriteLine("Bad directory input!");
@@ -30,10 +30,10 @@ namespace ConsoleApp
 
         static void printLoop(object data)
         {
-            var parallelRecognition = data as ParallelRecognition.ParallelRecognition;
+            var parallelRecognition = data as Recognition.ParallelRecognition;
             while (!parallelRecognition.HasFinished && parallelRecognition.CreationTimes.Count != 0)
             {
-                while (parallelRecognition.CreationTimes.TryDequeue(out ParallelRecognition.ImageClassified item))
+                while (parallelRecognition.CreationTimes.TryDequeue(out Recognition.ImageClassified item))
                 {
                     Console.WriteLine(item);
                 }

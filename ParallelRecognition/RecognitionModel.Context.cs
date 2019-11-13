@@ -7,7 +7,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace ParallelRecognition
+namespace Recognition
 {
     using System;
     using System.Data.Entity;
