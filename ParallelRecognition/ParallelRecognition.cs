@@ -85,7 +85,7 @@ namespace ParallelRecognition
                     var container = new List<NamedOnnxValue>();
                     if (IsInterrupted) break;
                     var tensor = LoadTensorFromFile(filePath);
-                    {
+                    { // to hide scope
                         if (FindInDB(tensor) is ImageClassified imageClassified)
                         {
                             imageClassified.ImagePath = filePath;
@@ -100,14 +100,6 @@ namespace ParallelRecognition
                     if (IsInterrupted) break;
                     using (var results = session.Run(container))
                     {
-                        {
-                            if (FindInDB(tensor) is ImageClassified imageClassified)
-                            {
-                                imageClassified.ImagePath = filePath;
-                                CreationTimes.Enqueue(imageClassified);
-                                continue;
-                            }
-                        }
                         foreach (var r in results)
                         {
                             double[] exp = new double[r.AsEnumerable<float>().Count()];
@@ -154,13 +146,14 @@ namespace ParallelRecognition
             var tensorBytes = DenseTensorToByteArray(tensor);
             using (var db = new RecognitionModelContainer())
             {
-                foreach (var row in db.Results)
+                var query = from row in db.Results
+                            where row.FileHash == tensorHash
+                            select row;
+                foreach (var row in query)
                 {
                     row.HitCount++;
-                    if (row.FileHash == tensorHash)
-                    //if (row.Blob.FileContent.Length == tensorBytes.Length && row.Blob.FileContent.SequenceEqual(tensorBytes))
+                    if (row.Blob.FileContent.Length == tensorBytes.Length && row.Blob.FileContent.SequenceEqual(tensorBytes))
                     {
-
                         result = new ImageClassified()
                         {
                             ImagePath = "",
@@ -195,8 +188,7 @@ namespace ParallelRecognition
             {
                 result += BitConverter.ToInt32(BitConverter.GetBytes(v), 0);
             }
-            //return result;
-            return 0;
+            return result;
         }
 
         static DenseTensor<float> LoadTensorFromFile(string filename)
