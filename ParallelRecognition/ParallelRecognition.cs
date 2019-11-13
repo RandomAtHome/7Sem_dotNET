@@ -7,6 +7,7 @@ using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Numerics.Tensors;
+using System.Runtime.Serialization.Formatters.Binary;
 using System.Threading;
 
 namespace ParallelRecognition
@@ -84,6 +85,12 @@ namespace ParallelRecognition
                     var container = new List<NamedOnnxValue>();
                     if (IsInterrupted) break;
                     var tensor = LoadTensorFromFile(filePath);
+                    if (FindInDB(tensor) is ImageClassified imageClassified)
+                    {
+                        imageClassified.ImagePath = filePath;
+                        CreationTimes.Enqueue(imageClassified);
+                        continue;
+                    }
                     foreach (var name in inputMeta.Keys)
                     {
                         container.Add(NamedOnnxValue.CreateFromTensor<float>(name, tensor));
@@ -102,6 +109,24 @@ namespace ParallelRecognition
                             var softmax = exp.Select(j => j / exp.Sum()).ToArray();
                             var max_val1 = softmax.Max();
                             var max_ind1 = Array.IndexOf(softmax, max_val1);
+                            using (var db = new RecognitionModelContainer())
+                            {
+                                var blob = new Blobs()
+                                {
+                                    FileContent = ObjectToByteArray(tensor)
+                                };
+                                var result = new Results()
+                                {
+                                    ClassId = max_ind1,
+                                    Probability = max_val1,
+                                    FileHash = GetTensorHash(tensor),
+                                    Blob = blob,
+                                };
+                                blob.Result = result;
+                                db.Blobs.Add(blob);
+                                db.Results.Add(result);
+                                db.SaveChanges();
+                            }
                             CreationTimes.Enqueue(new ImageClassified()
                             {
                                 ImagePath = filePath,
@@ -112,6 +137,54 @@ namespace ParallelRecognition
                     }
                 }
             }
+        }
+
+        private ImageClassified FindInDB(DenseTensor<float> tensor)
+        {
+            var tensorHash = GetTensorHash(tensor);
+            using (var db = new RecognitionModelContainer())
+            {
+                var query = from recognitionResult in db.Results
+                         where recognitionResult.FileHash == tensorHash
+                         select recognitionResult;
+                foreach (var result in query)
+                {
+                    var tensorBytes = ObjectToByteArray(tensor);
+                    if (result.Blob.FileContent.Length == tensorBytes.Length && result.Blob.FileContent.SequenceEqual(tensorBytes))
+                    {
+                        return new ImageClassified()
+                        {
+                            ImagePath = "",
+                            ClassName = result.ClassId.ToString(), // here be translation to real class name later
+                            Certainty = result.Probability,
+                        };
+                    }
+                }
+            }
+            return null;
+        }
+
+        private byte[] ObjectToByteArray(object obj)
+        {
+            if (obj == null) return null;
+            byte[] bytes;
+            using (var ms = new MemoryStream())
+            {
+                BinaryFormatter bf = new BinaryFormatter();
+                bf.Serialize(ms, (obj as DenseTensor<float>).ToArray());
+                bytes = ms.ToArray();
+            }
+            return bytes;
+        }
+
+        static Int64 GetTensorHash(DenseTensor<float> tensor)
+        {
+            Int64 result = 0;
+            foreach (var v in tensor)
+            {
+                result += BitConverter.ToInt32(BitConverter.GetBytes(v), 0);
+            }
+            return result;
         }
 
         static DenseTensor<float> LoadTensorFromFile(string filename)
