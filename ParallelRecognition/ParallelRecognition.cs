@@ -109,23 +109,37 @@ namespace ParallelRecognition
                             var softmax = exp.Select(j => j / exp.Sum()).ToArray();
                             var max_val1 = softmax.Max();
                             var max_ind1 = Array.IndexOf(softmax, max_val1);
+                            var tensorHash = GetTensorHash(tensor);
+                            var tensorBytes = DenseTensorToByteArray(tensor);
                             using (var db = new RecognitionModelContainer())
                             {
-                                var blob = new Blobs()
+                                var isCached = false;
+                                var query = from recognitionResult in db.Results
+                                            where recognitionResult.FileHash == tensorHash
+                                            select recognitionResult;
+                                foreach (var row in query)
                                 {
-                                    FileContent = ObjectToByteArray(tensor)
-                                };
-                                var result = new Results()
+                                    row.HitCount++;
+                                    if (row.Blob.FileContent.Length == tensorBytes.Length && row.Blob.FileContent.SequenceEqual(tensorBytes))
+                                    {
+                                        isCached = true;
+                                        break;
+                                    }
+                                }
+                                if (!isCached)
                                 {
-                                    ClassId = max_ind1,
-                                    Probability = max_val1,
-                                    FileHash = GetTensorHash(tensor),
-                                    Blob = blob,
-                                };
-                                blob.Result = result;
-                                db.Blobs.Add(blob);
-                                db.Results.Add(result);
-                                db.SaveChanges();
+                                    db.Results.Add(new Results()
+                                        {
+                                            ClassId = max_ind1,
+                                            Probability = max_val1,
+                                            FileHash = tensorHash,
+                                            Blob = new Blobs()
+                                            {
+                                                FileContent = tensorBytes
+                                            },
+                                        });
+                                    db.SaveChanges();
+                                }
                             }
                             CreationTimes.Enqueue(new ImageClassified()
                             {
@@ -143,15 +157,15 @@ namespace ParallelRecognition
         {
             ImageClassified result = null;
             var tensorHash = GetTensorHash(tensor);
+            var tensorBytes = DenseTensorToByteArray(tensor);
             using (var db = new RecognitionModelContainer())
             {
                 var query = from recognitionResult in db.Results
-                         where recognitionResult.FileHash == tensorHash
-                         select recognitionResult;
+                            where recognitionResult.FileHash == tensorHash
+                            select recognitionResult;
                 foreach (var row in query)
                 {
                     row.HitCount++;
-                    var tensorBytes = ObjectToByteArray(tensor);
                     if (row.Blob.FileContent.Length == tensorBytes.Length && row.Blob.FileContent.SequenceEqual(tensorBytes))
                     {
 
@@ -169,14 +183,14 @@ namespace ParallelRecognition
             return result;
         }
 
-        private byte[] ObjectToByteArray(object obj)
+        private byte[] DenseTensorToByteArray(DenseTensor<float> dt)
         {
-            if (obj == null) return null;
+            if (dt == null) return null;
             byte[] bytes;
             using (var ms = new MemoryStream())
             {
                 BinaryFormatter bf = new BinaryFormatter();
-                bf.Serialize(ms, (obj as DenseTensor<float>).ToArray());
+                bf.Serialize(ms, dt.ToArray());
                 bytes = ms.ToArray();
             }
             return bytes;
