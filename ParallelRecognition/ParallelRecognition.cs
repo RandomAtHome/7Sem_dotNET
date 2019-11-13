@@ -85,11 +85,13 @@ namespace ParallelRecognition
                     var container = new List<NamedOnnxValue>();
                     if (IsInterrupted) break;
                     var tensor = LoadTensorFromFile(filePath);
-                    if (FindInDB(tensor) is ImageClassified imageClassified)
                     {
-                        imageClassified.ImagePath = filePath;
-                        CreationTimes.Enqueue(imageClassified);
-                        continue;
+                        if (FindInDB(tensor) is ImageClassified imageClassified)
+                        {
+                            imageClassified.ImagePath = filePath;
+                            CreationTimes.Enqueue(imageClassified);
+                            continue;
+                        }
                     }
                     foreach (var name in inputMeta.Keys)
                     {
@@ -98,6 +100,14 @@ namespace ParallelRecognition
                     if (IsInterrupted) break;
                     using (var results = session.Run(container))
                     {
+                        {
+                            if (FindInDB(tensor) is ImageClassified imageClassified)
+                            {
+                                imageClassified.ImagePath = filePath;
+                                CreationTimes.Enqueue(imageClassified);
+                                continue;
+                            }
+                        }
                         foreach (var r in results)
                         {
                             double[] exp = new double[r.AsEnumerable<float>().Count()];
@@ -113,33 +123,17 @@ namespace ParallelRecognition
                             var tensorBytes = DenseTensorToByteArray(tensor);
                             using (var db = new RecognitionModelContainer())
                             {
-                                var isCached = false;
-                                var query = from recognitionResult in db.Results
-                                            where recognitionResult.FileHash == tensorHash
-                                            select recognitionResult;
-                                foreach (var row in query)
-                                {
-                                    row.HitCount++;
-                                    if (row.Blob.FileContent.Length == tensorBytes.Length && row.Blob.FileContent.SequenceEqual(tensorBytes))
+                                db.Results.Add(new Results()
                                     {
-                                        isCached = true;
-                                        break;
-                                    }
-                                }
-                                if (!isCached)
-                                {
-                                    db.Results.Add(new Results()
+                                        ClassId = max_ind1,
+                                        Probability = max_val1,
+                                        FileHash = tensorHash,
+                                        Blob = new Blobs()
                                         {
-                                            ClassId = max_ind1,
-                                            Probability = max_val1,
-                                            FileHash = tensorHash,
-                                            Blob = new Blobs()
-                                            {
-                                                FileContent = tensorBytes
-                                            },
-                                        });
-                                    db.SaveChanges();
-                                }
+                                            FileContent = tensorBytes
+                                        },
+                                    });
+                                db.SaveChanges();
                             }
                             CreationTimes.Enqueue(new ImageClassified()
                             {
@@ -160,13 +154,11 @@ namespace ParallelRecognition
             var tensorBytes = DenseTensorToByteArray(tensor);
             using (var db = new RecognitionModelContainer())
             {
-                var query = from recognitionResult in db.Results
-                            where recognitionResult.FileHash == tensorHash
-                            select recognitionResult;
-                foreach (var row in query)
+                foreach (var row in db.Results)
                 {
                     row.HitCount++;
-                    if (row.Blob.FileContent.Length == tensorBytes.Length && row.Blob.FileContent.SequenceEqual(tensorBytes))
+                    if (row.FileHash == tensorHash)
+                    //if (row.Blob.FileContent.Length == tensorBytes.Length && row.Blob.FileContent.SequenceEqual(tensorBytes))
                     {
 
                         result = new ImageClassified()
@@ -203,7 +195,8 @@ namespace ParallelRecognition
             {
                 result += BitConverter.ToInt32(BitConverter.GetBytes(v), 0);
             }
-            return result;
+            //return result;
+            return 0;
         }
 
         static DenseTensor<float> LoadTensorFromFile(string filename)
