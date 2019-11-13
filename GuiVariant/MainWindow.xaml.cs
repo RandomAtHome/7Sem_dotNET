@@ -139,7 +139,7 @@ namespace GuiVariant
                 clearDatabase.IsEnabled = true;
                 directorySelectBtn.IsEnabled = true;
                 stopRecognitionBtn.IsEnabled = false;
-                MessageBox.Show("Completed recognition!", "Info");
+                MessageBox.Show("Recognition finished!", "Info");
             }));
         }
 
@@ -154,12 +154,15 @@ namespace GuiVariant
 
         private void clearDatabase_Click(object sender, RoutedEventArgs e)
         {
+            var answer = MessageBox.Show("Do you wish to clear stats?", "Warning", MessageBoxButton.YesNo);
+            if (answer is MessageBoxResult.No) return;
             using (var db = new ParallelRecognition.RecognitionModelContainer())
             {
                 db.Database.ExecuteSqlCommand("DELETE Results");
                 db.Database.ExecuteSqlCommand("DELETE Blobs");
-                MessageBox.Show("Tables successfully truncated!", "Info");
             }
+            MessageBox.Show("Tables successfully truncated!", "Info");
+
         }
 
         private void getHitStats_Click(object sender, RoutedEventArgs e)
