@@ -141,27 +141,32 @@ namespace ParallelRecognition
 
         private ImageClassified FindInDB(DenseTensor<float> tensor)
         {
+            ImageClassified result = null;
             var tensorHash = GetTensorHash(tensor);
             using (var db = new RecognitionModelContainer())
             {
                 var query = from recognitionResult in db.Results
                          where recognitionResult.FileHash == tensorHash
                          select recognitionResult;
-                foreach (var result in query)
+                foreach (var row in query)
                 {
+                    row.HitCount++;
                     var tensorBytes = ObjectToByteArray(tensor);
-                    if (result.Blob.FileContent.Length == tensorBytes.Length && result.Blob.FileContent.SequenceEqual(tensorBytes))
+                    if (row.Blob.FileContent.Length == tensorBytes.Length && row.Blob.FileContent.SequenceEqual(tensorBytes))
                     {
-                        return new ImageClassified()
+
+                        result = new ImageClassified()
                         {
                             ImagePath = "",
-                            ClassName = result.ClassId.ToString(), // here be translation to real class name later
-                            Certainty = result.Probability,
+                            ClassName = row.ClassId.ToString(), // here be translation to real class name later
+                            Certainty = row.Probability,
                         };
+                        break;
                     }
                 }
+                db.SaveChanges(); //is this necessary?..
             }
-            return null;
+            return result;
         }
 
         private byte[] ObjectToByteArray(object obj)

@@ -2,7 +2,7 @@
 -- --------------------------------------------------
 -- Entity Designer DDL Script for SQL Server 2005, 2008, 2012 and Azure
 -- --------------------------------------------------
--- Date Created: 11/12/2019 10:09:13
+-- Date Created: 11/13/2019 11:48:13
 -- Generated from EDMX file: D:\Coding\ConsoleApp\ParallelRecognition\RecognitionModel.edmx
 -- --------------------------------------------------
 
@@ -17,11 +17,20 @@ GO
 -- Dropping existing FOREIGN KEY constraints
 -- --------------------------------------------------
 
+IF OBJECT_ID(N'[dbo].[FK_ResultsBlobs]', 'F') IS NOT NULL
+    ALTER TABLE [dbo].[Results] DROP CONSTRAINT [FK_ResultsBlobs];
+GO
 
 -- --------------------------------------------------
 -- Dropping existing tables
 -- --------------------------------------------------
 
+IF OBJECT_ID(N'[dbo].[Results]', 'U') IS NOT NULL
+    DROP TABLE [dbo].[Results];
+GO
+IF OBJECT_ID(N'[dbo].[Blobs]', 'U') IS NOT NULL
+    DROP TABLE [dbo].[Blobs];
+GO
 
 -- --------------------------------------------------
 -- Creating all tables
@@ -33,6 +42,7 @@ CREATE TABLE [dbo].[Results] (
     [ClassId] int  NOT NULL,
     [FileHash] bigint  NOT NULL,
     [Probability] float  NOT NULL,
+    [HitCount] int  NOT NULL,
     [Blob_Id] int  NOT NULL
 );
 GO

@@ -56,6 +56,7 @@ namespace GuiVariant
                     DirectoryPath = dialog.SelectedPath;
                     startRecognitionBtn.IsEnabled = true;
                     directorySelectBtn.IsEnabled = false;
+                    clearDatabase.IsEnabled = true;
 
                     parallelRecognition = new ParallelRecognition.ParallelRecognition(DirectoryPath);
                     var additionThread = new Thread(AddImagesToCollection)
@@ -92,8 +93,9 @@ namespace GuiVariant
                     IsBackground = true
                 };
                 updaterThread.Start();
-                stopRecognitionBtn.IsEnabled = true;
                 startRecognitionBtn.IsEnabled = false;
+                stopRecognitionBtn.IsEnabled = true;
+                clearDatabase.IsEnabled = false;
             }
         }
 
@@ -126,8 +128,18 @@ namespace GuiVariant
                         }
                     }));
                 }
-                Thread.Sleep(500);
+                Thread.Sleep(100);
             }
+            Dispatcher.BeginInvoke(new Action(() =>
+            {
+                imagesView.View.Refresh();
+                classesDataList.Items.Refresh();
+                startRecognitionBtn.IsEnabled = true;
+                clearDatabase.IsEnabled = true;
+                directorySelectBtn.IsEnabled = true;
+                stopRecognitionBtn.IsEnabled = false;
+                MessageBox.Show("Completed recognition!", "Info");
+            }));
         }
 
         private void stopRecognitionBtn_Click(object sender, RoutedEventArgs e)
@@ -136,6 +148,17 @@ namespace GuiVariant
             directorySelectBtn.IsEnabled = true;
             startRecognitionBtn.IsEnabled = false;
             stopRecognitionBtn.IsEnabled = false;
+            clearDatabase.IsEnabled = true;
+        }
+
+        private void clearDatabase_Click(object sender, RoutedEventArgs e)
+        {
+            using (var db = new ParallelRecognition.RecognitionModelContainer())
+            {
+                db.Database.ExecuteSqlCommand("DELETE Results");
+                db.Database.ExecuteSqlCommand("DELETE Blobs");
+                MessageBox.Show("Tables successfully truncated!", "Info");
+            }
         }
     }
 

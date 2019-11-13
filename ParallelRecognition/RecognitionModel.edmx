@@ -21,6 +21,7 @@
     <Property Name="ClassId" Type="int" Nullable="false" />
     <Property Name="FileHash" Type="bigint" Nullable="false" />
     <Property Name="Probability" Type="float" Nullable="false" />
+    <Property Name="HitCount" Type="int" Nullable="false" DefaultValue="0" />
     <Property Name="Blob_Id" Type="int" Nullable="false" />
   </EntityType>
   <EntityType Name="Blobs">
@@ -63,6 +64,7 @@
           <Property Name="FileHash" Type="Int64" Nullable="false" />
           <Property Name="Probability" Type="Double" Nullable="false" />
           <NavigationProperty Name="Blob" Relationship="RecognitionModel.ResultsBlobs" FromRole="Results" ToRole="Blobs" />
+          <Property Name="HitCount" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="None" DefaultValue="0" />
         </EntityType>
         <EntityType Name="Blobs">
           <Key>
@@ -89,6 +91,7 @@
           <ScalarProperty Name="ClassId" ColumnName="ClassId" />
           <ScalarProperty Name="FileHash" ColumnName="FileHash" />
           <ScalarProperty Name="Probability" ColumnName="Probability" />
+          <ScalarProperty Name="HitCount" ColumnName="HitCount" />
         </MappingFragment>
       </EntityTypeMapping>
     </EntitySetMapping>

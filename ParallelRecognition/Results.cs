@@ -14,10 +14,17 @@ namespace ParallelRecognition
     
     public partial class Results
     {
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2214:DoNotCallOverridableMethodsInConstructors")]
+        public Results()
+        {
+            this.HitCount = 0;
+        }
+    
         public int Id { get; set; }
         public int ClassId { get; set; }
         public long FileHash { get; set; }
         public double Probability { get; set; }
+        public int HitCount { get; set; }
     
         public virtual Blobs Blob { get; set; }
     }
