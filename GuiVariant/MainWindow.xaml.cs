@@ -167,15 +167,13 @@ namespace GuiVariant
 
         private void getHitStats_Click(object sender, RoutedEventArgs e)
         {
-            List<Int32> hits = null;
+            hitStatsList.Items.Clear();
             using (var db = new ParallelRecognition.RecognitionModelContainer())
             {
-                hits = (from row in db.Results select row.HitCount).ToList();
-            }
-            hitStatsList.Items.Clear();
-            foreach (var hit in hits)
-            {
-                hitStatsList.Items.Add(hit);
+                foreach (var hit in from row in db.Results select row.HitCount)
+                {
+                    hitStatsList.Items.Add(hit);
+                }
             }
         }
     }
