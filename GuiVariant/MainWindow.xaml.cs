@@ -1,5 +1,6 @@
 ﻿//variant a
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.IO;
@@ -158,6 +159,20 @@ namespace GuiVariant
                 db.Database.ExecuteSqlCommand("DELETE Results");
                 db.Database.ExecuteSqlCommand("DELETE Blobs");
                 MessageBox.Show("Tables successfully truncated!", "Info");
+            }
+        }
+
+        private void getHitStats_Click(object sender, RoutedEventArgs e)
+        {
+            List<Int32> hits = null;
+            using (var db = new ParallelRecognition.RecognitionModelContainer())
+            {
+                hits = (from row in db.Results select row.HitCount).ToList();
+            }
+            hitStatsList.Items.Clear();
+            foreach (var hit in hits)
+            {
+                hitStatsList.Items.Add(hit);
             }
         }
     }

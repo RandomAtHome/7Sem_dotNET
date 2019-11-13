@@ -18,12 +18,17 @@
         </DataTemplate>
     </Window.Resources>
     <Grid>
-        <StackPanel HorizontalAlignment="Left" Height="400" Margin="10,10,0,0" VerticalAlignment="Top" Width="140">
-            <Button x:Name="directorySelectBtn" Content="Select Directory" Click="directorySelectBtn_Click"/>
-            <Button x:Name="startRecognitionBtn" Content="Start Recognition" IsEnabled="False" Click="startRecognitionBtn_Click"/>
-            <Button x:Name="stopRecognitionBtn" Content="Finish Recognition" IsEnabled="False" Click="stopRecognitionBtn_Click"/>
-            <Button x:Name="clearDatabase" Content="Clear tables" IsEnabled="True" Click="clearDatabase_Click"/>
-        </StackPanel>
+        <DockPanel HorizontalAlignment="Left" Height="400" Margin="10,10,0,0" VerticalAlignment="Top" Width="140">
+            <Button DockPanel.Dock="Top" x:Name="directorySelectBtn" Content="Select Directory" Click="directorySelectBtn_Click"/>
+            <Button DockPanel.Dock="Top" x:Name="startRecognitionBtn" Content="Start Recognition" IsEnabled="False" Click="startRecognitionBtn_Click"/>
+            <Button DockPanel.Dock="Top" x:Name="stopRecognitionBtn" Content="Finish Recognition" IsEnabled="False" Click="stopRecognitionBtn_Click"/>
+            <Button DockPanel.Dock="Top" x:Name="clearDatabase" Content="Clear tables" IsEnabled="True" Click="clearDatabase_Click"/>
+            <DockPanel DockPanel.Dock="Top" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+                <Button DockPanel.Dock="Top" x:Name="getHitStats" Content="Get Stats" Click="getHitStats_Click"/>
+                <Label DockPanel.Dock="Top" x:Name="hitDataLabel" Content="Statistics"/>
+                <ListBox DockPanel.Dock="Top" x:Name="hitStatsList" VerticalAlignment="Stretch"/>
+            </DockPanel>
+        </DockPanel>
         <StackPanel HorizontalAlignment="Left" Height="400" Margin="155,10,0,0" VerticalAlignment="Top" Width="202">
             <Label x:Name="classesDataTitle" Content="Class selector"/>
             <ListBox x:Name="classesDataList" ItemsSource="{DynamicResource key_ObsClassInfo}" Margin="0,0,-0.4,0" VerticalAlignment="Bottom" Height="375" SelectionMode="Single" SelectionChanged="classesDataList_SelectionChanged"/>
