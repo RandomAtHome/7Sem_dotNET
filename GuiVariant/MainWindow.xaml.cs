@@ -140,7 +140,7 @@ namespace GuiVariant
                 directorySelectBtn.IsEnabled = true;
                 stopRecognitionBtn.IsEnabled = false;
                 MessageBox.Show("Recognition finished!", "Info");
-            }));
+            })).Wait();
         }
 
         private void stopRecognitionBtn_Click(object sender, RoutedEventArgs e)

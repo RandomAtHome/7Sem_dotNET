@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
 using System.Linq;
+using System.Numerics;
 using System.Numerics.Tensors;
 using System.Threading;
 
@@ -111,7 +112,7 @@ namespace Recognition
                             var softmax = exp.Select(j => j / exp.Sum()).ToArray();
                             var max_val1 = softmax.Max();
                             var max_ind1 = Array.IndexOf(softmax, max_val1);
-                            var tensorHash = GetTensorHash(tensor);
+                            var tensorHash = GetTensorHash(fileBytes);
                             using (var db = new RecognitionModelContainer())
                             {
                                 db.Results.Add(new Results()
@@ -141,7 +142,7 @@ namespace Recognition
         private ImageClassified FindInDB(DenseTensor<float> tensor, byte[] fileBytes)
         {
             ImageClassified result = null;
-            var tensorHash = GetTensorHash(tensor);
+            var tensorHash = GetTensorHash(fileBytes);
             using (var db = new RecognitionModelContainer())
             {
                 var query = from row in db.Results
@@ -171,14 +172,9 @@ namespace Recognition
             return File.ReadAllBytes(filename);
         }
 
-        static Int64 GetTensorHash(DenseTensor<float> tensor)
+        static Int64 GetTensorHash(byte[] filebytes)
         {
-            Int64 result = 0;
-            foreach (var v in tensor)
-            {
-                result += BitConverter.ToInt32(BitConverter.GetBytes(v), 0);
-            }
-            return result;
+            return new BigInteger(filebytes).GetHashCode();
         }
 
         static DenseTensor<float> LoadTensorFromFile(string filename)
