@@ -127,22 +127,15 @@ namespace GuiVariant
             var images = (FindResource("key_ObsImageItems") as ObservableImageItem);
             var classes = (FindResource("key_ObsClassInfo") as ObservableClassInfo);
             var imagesView = (FindResource("key_FilteredView") as CollectionViewSource);
-            List<Task<HttpResponseMessage>> tasks = new List<Task<HttpResponseMessage>>();
-            foreach (var filename in Directory.GetFiles(DirectoryPath))
-            {
-                var bi = new FileDescription() { Name = filename, Content = Convert.ToBase64String(File.ReadAllBytes(filename)) };
-                var dataAsString = JsonConvert.SerializeObject(bi);
-                var content = new StringContent(dataAsString);
-                content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
-                tasks.Add(httpClient.PostAsync(SERVER_URL, content));
-            }
-            int index;
             try
             {
-                while (tasks.Count != 0 && (index = Task.WaitAny(tasks.ToArray(), cancelTokens.Token)) != -1)
+                foreach (var filename in Directory.GetFiles(DirectoryPath))
                 {
-                    var httpResponse = tasks[index].Result;
-                    tasks.RemoveAt(index);
+                    var bi = new FileDescription() { Name = filename, Content = Convert.ToBase64String(File.ReadAllBytes(filename)) };
+                    var dataAsString = JsonConvert.SerializeObject(bi);
+                    var content = new StringContent(dataAsString);
+                    content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
+                    var httpResponse = httpClient.PostAsync(SERVER_URL, content, cancelTokens.Token).Result;
                     if (httpResponse.IsSuccessStatusCode)
                     {
                         var item = JsonConvert.DeserializeObject<ImageClassified>(httpResponse.Content.ReadAsStringAsync().Result);
@@ -164,25 +157,25 @@ namespace GuiVariant
                             {
                                 classes.Add(new ClassInfo() { ClassName = item.ClassName, Count = 1 });
                             }
-                        }));
+                        })).Wait();
                     }
                 }
-            }
-            catch { }
-            finally
-            {
-                tasks.Clear();
+            } catch (AggregateException) {
                 Dispatcher.BeginInvoke(new Action(() =>
                 {
-                    imagesView.View.Refresh();
-                    classesDataList.Items.Refresh();
-                    startRecognitionBtn.IsEnabled = true;
-                    clearDatabase.IsEnabled = true;
-                    directorySelectBtn.IsEnabled = true;
-                    stopRecognitionBtn.IsEnabled = false;
-                    MessageBox.Show("Recognition finished!", "Info");
+                    MessageBox.Show("Recognition was interrupted!", "Info");
                 })).Wait();
             }
+            Dispatcher.BeginInvoke(new Action(() =>
+            {
+                imagesView.View.Refresh();
+                classesDataList.Items.Refresh();
+                startRecognitionBtn.IsEnabled = true;
+                clearDatabase.IsEnabled = true;
+                directorySelectBtn.IsEnabled = true;
+                stopRecognitionBtn.IsEnabled = false;
+                MessageBox.Show("Recognition finished!", "Info");
+            })).Wait();
         }
 
         private void stopRecognitionBtn_Click(object sender, RoutedEventArgs e)
