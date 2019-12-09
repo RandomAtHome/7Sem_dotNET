@@ -2,12 +2,73 @@
 
   <PropertyGroup>
     <TargetFramework>netcoreapp3.0</TargetFramework>
+    <Platforms>AnyCPU;x64</Platforms>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="RecognitionModel.Context.tt" />
+    <None Remove="RecognitionModel.edmx" />
+    <None Remove="RecognitionModel.tt" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="RecognitionModel.Context.tt">
+      <DependentUpon>RecognitionModel.edmx</DependentUpon>
+      <LastGenOutput>RecognitionModel.Context.cs</LastGenOutput>
+      <Generator>TextTemplatingFileGenerator</Generator>
+    </Content>
+    <Content Include="RecognitionModel.tt">
+      <DependentUpon>RecognitionModel.edmx</DependentUpon>
+      <LastGenOutput>RecognitionModel.cs</LastGenOutput>
+      <Generator>TextTemplatingFileGenerator</Generator>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <EntityDeploy Include="RecognitionModel.edmx">
+      <LastGenOutput>RecognitionModel.Designer.cs</LastGenOutput>
+      <Generator>EntityModelCodeGenerator</Generator>
+    </EntityDeploy>
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="EntityFramework" Version="6.4.0" />
     <PackageReference Include="Microsoft.ML.OnnxRuntime" Version="1.0.0" />
     <PackageReference Include="System.Drawing.Common" Version="4.7.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Update="Blobs.cs">
+      <DependentUpon>RecognitionModel.tt</DependentUpon>
+    </Compile>
+    <Compile Update="RecognitionModel.Context.cs">
+      <DependentUpon>RecognitionModel.Context.tt</DependentUpon>
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+    </Compile>
+    <Compile Update="RecognitionModel.cs">
+      <DependentUpon>RecognitionModel.tt</DependentUpon>
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+    </Compile>
+    <Compile Update="RecognitionModel.Designer.cs">
+      <DependentUpon>RecognitionModel.edmx</DependentUpon>
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+    </Compile>
+    <Compile Update="Results.cs">
+      <DependentUpon>RecognitionModel.tt</DependentUpon>
+    </Compile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="RecognitionModel.edmx.diagram">
+      <DependentUpon>RecognitionModel.edmx</DependentUpon>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Service Include="{508349b6-6b84-4df5-91f0-309beebad82d}" />
   </ItemGroup>
 
 </Project>

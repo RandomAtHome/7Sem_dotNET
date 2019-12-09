@@ -1,5 +1,5 @@
 ﻿//variant a
-using ParallelRecognition;
+using CoreParallelRecognition;
 using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
@@ -15,7 +15,7 @@ namespace GuiVariant
 {
     public partial class MainWindow : Window
     {
-        private ParallelRecognition.ParallelRecognition parallelRecognition = null;
+        private CoreParallelRecognition.ParallelRecognition parallelRecognition = null;
 
         string DirectoryPath { get; set; } = null;
 
@@ -59,7 +59,7 @@ namespace GuiVariant
                     directorySelectBtn.IsEnabled = false;
                     clearDatabase.IsEnabled = true;
 
-                    parallelRecognition = new ParallelRecognition.ParallelRecognition(DirectoryPath);
+                    parallelRecognition = new CoreParallelRecognition.ParallelRecognition(DirectoryPath);
                     var additionThread = new Thread(AddImagesToCollection)
                     {
                         IsBackground = true
@@ -107,7 +107,7 @@ namespace GuiVariant
             var imagesView = (FindResource("key_FilteredView") as CollectionViewSource);
             while (!parallelRecognition.HasFinished)
             {
-                while (parallelRecognition.CreationTimes.TryDequeue(out ParallelRecognition.ImageClassified item))
+                while (parallelRecognition.CreationTimes.TryDequeue(out CoreParallelRecognition.ImageClassified item))
                 {
                     Dispatcher.BeginInvoke(new Action(() =>
                     {
@@ -156,7 +156,7 @@ namespace GuiVariant
         {
             var answer = MessageBox.Show("Do you wish to clear stats?", "Warning", MessageBoxButton.YesNo);
             if (answer is MessageBoxResult.No) return;
-            using (var db = new ParallelRecognition.RecognitionModelContainer())
+            using (var db = new CoreParallelRecognition.RecognitionModelContainer())
             {
                 db.Database.ExecuteSqlCommand("DELETE Results");
                 db.Database.ExecuteSqlCommand("DELETE Blobs");
@@ -168,7 +168,7 @@ namespace GuiVariant
         private void getHitStats_Click(object sender, RoutedEventArgs e)
         {
             hitStatsList.Items.Clear();
-            using (var db = new ParallelRecognition.RecognitionModelContainer())
+            using (var db = new CoreParallelRecognition.RecognitionModelContainer())
             {
                 foreach (var hit in from row in db.Results select row)
                 {

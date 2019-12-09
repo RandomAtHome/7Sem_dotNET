@@ -6,6 +6,15 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Content Remove="App.Config" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="App.Config" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\CoreParallelRecognition\CoreParallelRecognition.csproj" />
   </ItemGroup>
 
 </Project>

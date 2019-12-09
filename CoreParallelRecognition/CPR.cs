@@ -10,7 +10,7 @@ using System.Linq;
 using System.Numerics;
 using System.Threading;
 
-namespace ParallelRecognition
+namespace CoreParallelRecognition
 {
     public class ParallelRecognition
     {
@@ -77,7 +77,7 @@ namespace ParallelRecognition
         void RecognizeContents(object obj)
         {
             var queue = obj as ConcurrentQueue<string>;
-            using (var session = new InferenceSession(@"DnnImageModels\ResNet50Onnx\resnet50v2.onnx"))
+            using (var session = new InferenceSession(@"C:\Users\randomnb\Desktop\DnnImageModels\ResNet50Onnx\resnet50v2.onnx"))
             {
                 while (queue.TryDequeue(out string filePath))
                 {

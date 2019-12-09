@@ -10,7 +10,7 @@ using System.Numerics;
 using System.Numerics.Tensors;
 using System.Threading;
 
-namespace ParallelRecognition
+namespace CoreParallelRecognition
 {
     public class ParallelRecognition
     {
