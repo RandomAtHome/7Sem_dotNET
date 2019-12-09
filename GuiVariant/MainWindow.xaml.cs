@@ -134,7 +134,7 @@ namespace GuiVariant
                 var dataAsString = JsonConvert.SerializeObject(bi);
                 var content = new StringContent(dataAsString);
                 content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
-                tasks.Add(httpClient.PostAsync(SERVER_URL, content, cancelTokens.Token));
+                tasks.Add(httpClient.PostAsync(SERVER_URL, content));
             }
             int index;
             try
@@ -190,10 +190,6 @@ namespace GuiVariant
             cancelTokens.Cancel(false);
             cancelTokens.Dispose();
             cancelTokens = new CancellationTokenSource();
-            directorySelectBtn.IsEnabled = true;
-            startRecognitionBtn.IsEnabled = false;
-            stopRecognitionBtn.IsEnabled = false;
-            clearDatabase.IsEnabled = true;
         }
 
         private void clearDatabase_Click(object sender, RoutedEventArgs e)

@@ -15,7 +15,7 @@ namespace CoreParallelRecognition
     public class ParallelRecognition
     {
         static readonly ManualResetEvent limitHit = new ManualResetEvent(true);
-        static private readonly int threadLimit = 1;
+        static private readonly int threadLimit = Environment.ProcessorCount;
         static private volatile int curThreads = 0;
 
         static public ImageClassified RecognizeContents(byte[] fileBytes, string filename)
@@ -25,6 +25,12 @@ namespace CoreParallelRecognition
                 imageClassified.ImagePath = filename;
                 return imageClassified;
             }
+            curThreads++;
+            if (curThreads > threadLimit)
+            {
+                limitHit.Reset();
+                limitHit.WaitOne();
+            }
             using var session = new InferenceSession(@"C:\Users\randomnb\Desktop\DnnImageModels\ResNet50Onnx\resnet50v2.onnx");
             var inputMeta = session.InputMetadata;
             var container = new List<NamedOnnxValue>();
@@ -32,12 +38,6 @@ namespace CoreParallelRecognition
             foreach (var name in inputMeta.Keys)
             {
                 container.Add(NamedOnnxValue.CreateFromTensor<float>(name, tensor));
-            }
-            curThreads++;
-            if (curThreads > threadLimit)
-            {
-                limitHit.Reset();
-                limitHit.WaitOne();
             }
             using var results = session.Run(container);
             foreach (var r in results)
@@ -70,7 +70,7 @@ namespace CoreParallelRecognition
                 curThreads--;
                 if (curThreads <= threadLimit)
                 {
-                    limitHit.Reset();
+                    limitHit.Set();
                 }
                 return new ImageClassified()
                 {
