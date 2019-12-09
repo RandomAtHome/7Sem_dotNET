@@ -15,22 +15,20 @@ namespace CoreParallelRecognition
     public class ParallelRecognition
     {
         static readonly ManualResetEvent limitHit = new ManualResetEvent(true);
-        static private readonly int threadLimit = Environment.ProcessorCount;
+        static private readonly int threadLimit = 1;
         static private volatile int curThreads = 0;
 
         static public ImageClassified RecognizeContents(byte[] fileBytes, string filename)
         {
+            if (FindInDB(fileBytes) is ImageClassified imageClassified)
+            {
+                imageClassified.ImagePath = filename;
+                return imageClassified;
+            }
             using var session = new InferenceSession(@"C:\Users\randomnb\Desktop\DnnImageModels\ResNet50Onnx\resnet50v2.onnx");
             var inputMeta = session.InputMetadata;
             var container = new List<NamedOnnxValue>();
             var tensor = LoadTensorFromFileBytes(fileBytes);
-            { // to hide scope
-                if (FindInDB(fileBytes) is ImageClassified imageClassified)
-                {
-                    imageClassified.ImagePath = filename;
-                    return imageClassified;
-                }
-            }
             foreach (var name in inputMeta.Keys)
             {
                 container.Add(NamedOnnxValue.CreateFromTensor<float>(name, tensor));

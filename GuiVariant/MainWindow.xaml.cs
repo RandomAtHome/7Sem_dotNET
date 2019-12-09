@@ -1,11 +1,15 @@
 ﻿//variant a
-using CoreParallelRecognition;
+using Newtonsoft.Json;
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.IO;
 using System.Linq;
+using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
@@ -15,7 +19,9 @@ namespace GuiVariant
 {
     public partial class MainWindow : Window
     {
-        private CoreParallelRecognition.ParallelRecognition parallelRecognition = null;
+        private static readonly HttpClient httpClient = new HttpClient();
+        private static readonly string SERVER_URL = "https://localhost:44389/recognize/";
+        private static CancellationTokenSource cancelTokens = new CancellationTokenSource();
 
         string DirectoryPath { get; set; } = null;
 
@@ -59,7 +65,6 @@ namespace GuiVariant
                     directorySelectBtn.IsEnabled = false;
                     clearDatabase.IsEnabled = true;
 
-                    parallelRecognition = new CoreParallelRecognition.ParallelRecognition(DirectoryPath);
                     var additionThread = new Thread(AddImagesToCollection)
                     {
                         IsBackground = true
@@ -87,65 +92,104 @@ namespace GuiVariant
 
         private void startRecognitionBtn_Click(object sender, RoutedEventArgs e)
         {
-            if (parallelRecognition.Run())
+            var updaterThread = new Thread(collectionUpdater)
             {
-                var updaterThread = new Thread(collectionUpdater)
-                {
-                    IsBackground = true
-                };
-                updaterThread.Start();
-                startRecognitionBtn.IsEnabled = false;
-                stopRecognitionBtn.IsEnabled = true;
-                clearDatabase.IsEnabled = false;
-            }
+                IsBackground = true
+            };
+            updaterThread.Start();
+            startRecognitionBtn.IsEnabled = false;
+            stopRecognitionBtn.IsEnabled = true;
+            clearDatabase.IsEnabled = false;
         }
 
         private void collectionUpdater()
         {
-            var images = (FindResource("key_ObsImageItems") as ObservableImageItem);
-            var classes = (FindResource("key_ObsClassInfo") as ObservableClassInfo);
-            var imagesView = (FindResource("key_FilteredView") as CollectionViewSource);
-            while (!parallelRecognition.HasFinished)
+            try
             {
-                while (parallelRecognition.CreationTimes.TryDequeue(out CoreParallelRecognition.ImageClassified item))
+                if (httpClient.GetAsync(SERVER_URL).Result.StatusCode == System.Net.HttpStatusCode.NotFound)
                 {
                     Dispatcher.BeginInvoke(new Action(() =>
                     {
-                        var itemToUpdate = images.FirstOrDefault(i => i.ImagePath == item.ImagePath);
-                        if (itemToUpdate != null)
-                        {
-                            itemToUpdate.PredictedClass = item.ClassName;
-                            imagesView.View.Refresh();
-                        }
-                        var classToUpdate = classes.FirstOrDefault(i => i.ClassName == item.ClassName);
-                        if (classToUpdate != null)
-                        {
-                            classToUpdate.Count++;
-                            classesDataList.Items.Refresh();
-                        }
-                        else
-                        {
-                            classes.Add(new ClassInfo() { ClassName = item.ClassName, Count = 1 });
-                        }
+                        MessageBox.Show("Recognition failed! Wrong URL", "Info");
+                        stopRecognitionBtn_Click(null, null);
                     }));
+                    return;
                 }
-                Thread.Sleep(100);
-            }
-            Dispatcher.BeginInvoke(new Action(() =>
+            } catch(AggregateException)
             {
-                imagesView.View.Refresh();
-                classesDataList.Items.Refresh();
-                startRecognitionBtn.IsEnabled = true;
-                clearDatabase.IsEnabled = true;
-                directorySelectBtn.IsEnabled = true;
-                stopRecognitionBtn.IsEnabled = false;
-                MessageBox.Show("Recognition finished!", "Info");
-            })).Wait();
+                Dispatcher.BeginInvoke(new Action(() =>
+                {
+                    MessageBox.Show("Recognition failed! Connection timed out", "Info");
+                    stopRecognitionBtn_Click(null, null);
+                }));
+                return;
+            }
+            var images = (FindResource("key_ObsImageItems") as ObservableImageItem);
+            var classes = (FindResource("key_ObsClassInfo") as ObservableClassInfo);
+            var imagesView = (FindResource("key_FilteredView") as CollectionViewSource);
+            List<Task<HttpResponseMessage>> tasks = new List<Task<HttpResponseMessage>>();
+            foreach (var filename in Directory.GetFiles(DirectoryPath))
+            {
+                var bi = new FileDescription() { Name = filename, Content = Convert.ToBase64String(File.ReadAllBytes(filename)) };
+                var dataAsString = JsonConvert.SerializeObject(bi);
+                var content = new StringContent(dataAsString);
+                content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
+                tasks.Add(httpClient.PostAsync(SERVER_URL, content, cancelTokens.Token));
+            }
+            int index;
+            try
+            {
+                while (tasks.Count != 0 && (index = Task.WaitAny(tasks.ToArray(), cancelTokens.Token)) != -1)
+                {
+                    var httpResponse = tasks[index].Result;
+                    tasks.RemoveAt(index);
+                    if (httpResponse.IsSuccessStatusCode)
+                    {
+                        var item = JsonConvert.DeserializeObject<ImageClassified>(httpResponse.Content.ReadAsStringAsync().Result);
+                        Dispatcher.BeginInvoke(new Action(() =>
+                        {
+                            var itemToUpdate = images.FirstOrDefault(i => i.ImagePath == item.ImagePath);
+                            if (itemToUpdate != null)
+                            {
+                                itemToUpdate.PredictedClass = item.ClassName;
+                                imagesView.View.Refresh();
+                            }
+                            var classToUpdate = classes.FirstOrDefault(i => i.ClassName == item.ClassName);
+                            if (classToUpdate != null)
+                            {
+                                classToUpdate.Count++;
+                                classesDataList.Items.Refresh();
+                            }
+                            else
+                            {
+                                classes.Add(new ClassInfo() { ClassName = item.ClassName, Count = 1 });
+                            }
+                        }));
+                    }
+                }
+            }
+            catch { }
+            finally
+            {
+                tasks.Clear();
+                Dispatcher.BeginInvoke(new Action(() =>
+                {
+                    imagesView.View.Refresh();
+                    classesDataList.Items.Refresh();
+                    startRecognitionBtn.IsEnabled = true;
+                    clearDatabase.IsEnabled = true;
+                    directorySelectBtn.IsEnabled = true;
+                    stopRecognitionBtn.IsEnabled = false;
+                    MessageBox.Show("Recognition finished!", "Info");
+                })).Wait();
+            }
         }
 
         private void stopRecognitionBtn_Click(object sender, RoutedEventArgs e)
         {
-            parallelRecognition.Stop();
+            cancelTokens.Cancel(false);
+            cancelTokens.Dispose();
+            cancelTokens = new CancellationTokenSource();
             directorySelectBtn.IsEnabled = true;
             startRecognitionBtn.IsEnabled = false;
             stopRecognitionBtn.IsEnabled = false;
@@ -154,27 +198,59 @@ namespace GuiVariant
 
         private void clearDatabase_Click(object sender, RoutedEventArgs e)
         {
-            var answer = MessageBox.Show("Do you wish to clear stats?", "Warning", MessageBoxButton.YesNo);
-            if (answer is MessageBoxResult.No) return;
-            using (var db = new CoreParallelRecognition.RecognitionModelContainer())
+            Task.Run(() =>
             {
-                db.Database.ExecuteSqlCommand("DELETE Results");
-                db.Database.ExecuteSqlCommand("DELETE Blobs");
-            }
-            MessageBox.Show("Tables successfully truncated!", "Info");
+                var answer = MessageBox.Show("Do you wish to clear stats?", "Warning", MessageBoxButton.YesNo);
+                if (answer is MessageBoxResult.No) return;
+                try
+                {
+                    var response = httpClient.DeleteAsync(SERVER_URL).Result;
+                }
+                catch (AggregateException)
+                {
+                    Dispatcher.BeginInvoke(new Action(() =>
+                    {
+                        MessageBox.Show("Clearing stats failed! Server is unresponsive", "Info");
+                    }));
+                    return;
+                }
 
+                MessageBox.Show("Tables successfully truncated!", "Info");
+            });
         }
 
         private void getHitStats_Click(object sender, RoutedEventArgs e)
         {
-            hitStatsList.Items.Clear();
-            using (var db = new CoreParallelRecognition.RecognitionModelContainer())
+            Task.Run(() =>
             {
-                foreach (var hit in from row in db.Results select row)
+                try
                 {
-                    hitStatsList.Items.Add(hit.Filename + " | " + hit.HitCount.ToString());
+                    var response = httpClient.GetAsync(SERVER_URL).Result;
+                    Dispatcher.BeginInvoke(new Action(() =>
+                    {
+                        hitStatsList.Items.Clear();
+                    }));
+                    var hits = JsonConvert.DeserializeObject<string[]>(response.Content.ReadAsStringAsync().Result);
+                    foreach (var hit in hits)
+                    {
+                        Dispatcher.BeginInvoke(new Action(() =>
+                        {
+                            hitStatsList.Items.Add(hit);
+                        }));
+                    }
+                    if (hits.Length == 0)
+                    {
+                        MessageBox.Show("Server returned 0 stats", "Info");
+                    }
                 }
-            }
+                catch (AggregateException)
+                {
+                    Dispatcher.BeginInvoke(new Action(() =>
+                    {
+                        MessageBox.Show("Stats getting failed! Server is unresponsive", "Info");
+                    }));
+                }
+            });
         }
     }
 
@@ -196,5 +272,18 @@ namespace GuiVariant
         {
             return ClassName + " | " + Count.ToString();
         }
+    }
+
+    public class FileDescription
+    {
+        public string Name { get; set; }
+        public string Content { get; set; }
+    }
+
+    public class ImageClassified
+    {
+        public string ImagePath { get; set; }
+        public string ClassName { get; set; }
+        public double Certainty { get; set; }
     }
 }
