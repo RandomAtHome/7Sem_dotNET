@@ -7,7 +7,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace Recognition
+namespace ParallelRecognition
 {
     using System;
     using System.Collections.Generic;

@@ -2,7 +2,7 @@
 -- --------------------------------------------------
 -- Entity Designer DDL Script for SQL Server 2005, 2008, 2012 and Azure
 -- --------------------------------------------------
--- Date Created: 11/13/2019 11:48:13
+-- Date Created: 12/09/2019 17:51:46
 -- Generated from EDMX file: D:\Coding\ConsoleApp\ParallelRecognition\RecognitionModel.edmx
 -- --------------------------------------------------
 
@@ -43,6 +43,7 @@ CREATE TABLE [dbo].[Results] (
     [FileHash] bigint  NOT NULL,
     [Probability] float  NOT NULL,
     [HitCount] int  NOT NULL,
+    [Filename] nvarchar(max)  NOT NULL,
     [Blob_Id] int  NOT NULL
 );
 GO

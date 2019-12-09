@@ -10,7 +10,7 @@ using System.Numerics;
 using System.Numerics.Tensors;
 using System.Threading;
 
-namespace Recognition
+namespace ParallelRecognition
 {
     public class ParallelRecognition
     {
@@ -120,6 +120,7 @@ namespace Recognition
                                     ClassId = max_ind1,
                                     Probability = max_val1,
                                     FileHash = tensorHash,
+                                    Filename = filePath,
                                     Blob = new Blobs()
                                     {
                                         FileContent = fileBytes

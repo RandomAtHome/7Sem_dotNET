@@ -7,7 +7,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace Recognition
+namespace ParallelRecognition
 {
     using System;
     using System.Collections.Generic;
@@ -25,6 +25,7 @@ namespace Recognition
         public long FileHash { get; set; }
         public double Probability { get; set; }
         public int HitCount { get; set; }
+        public string Filename { get; set; }
     
         public virtual Blobs Blob { get; set; }
     }
