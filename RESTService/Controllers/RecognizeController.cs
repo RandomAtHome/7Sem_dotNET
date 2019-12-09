@@ -1,9 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
 using CoreParallelRecognition;
 
 namespace RESTService.Controllers
