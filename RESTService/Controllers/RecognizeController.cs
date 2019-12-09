@@ -12,22 +12,32 @@ namespace RESTService.Controllers
     [Route("[controller]")]
     public class RecognizeController : ControllerBase
     {
-        [HttpGet]
-        public IEnumerable<ImageClassified> Get()
+        [HttpPost]
+        public ImageClassified RecognizeImage([FromBody] FileDescription fileDescription)
         {
-            var dirPath = @"C:\Users\randomnb\Desktop\Pics2";
-            var parallelRecognition = new ParallelRecognition(dirPath);
-            parallelRecognition.Run();
-            var images = new List<ImageClassified>(); 
-            while (!parallelRecognition.HasFinished)
-            {
-                while (parallelRecognition.CreationTimes.TryDequeue(out ImageClassified item))
-                {
-                    images.Add(item);
-                }
-                Thread.Sleep(100);
-            }
-            return images;
+            var contents = Convert.FromBase64String(fileDescription.Content);
+            return ParallelRecognition.RecognizeContents(contents, fileDescription.Name);
         }
+
+        [HttpGet]
+        public IEnumerable<string> Get()
+        {
+            using var db = new RecognitionModelContainer();
+            return (from row in db.Results select row.Filename + "|" + row.HitCount.ToString()).ToArray();
+        }
+
+        [HttpDelete]
+        public void TruncateStats()
+        {
+            using var db = new RecognitionModelContainer();
+            db.Database.ExecuteSqlCommand("DELETE Results");
+            db.Database.ExecuteSqlCommand("DELETE Blobs");
+        }
+    }
+
+    public class FileDescription
+    {
+        public string Name { get; set; }
+        public string Content { get; set; }
     }
 }

@@ -15,7 +15,7 @@ namespace CoreParallelRecognition
     public class ParallelRecognition
     {
         static readonly ManualResetEvent limitHit = new ManualResetEvent(true);
-        static private readonly int threadLimit = 4;
+        static private readonly int threadLimit = Environment.ProcessorCount;
         static private volatile int curThreads = 0;
 
         static public ImageClassified RecognizeContents(byte[] fileBytes, string filename)
