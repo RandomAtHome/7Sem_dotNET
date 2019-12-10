@@ -101,22 +101,22 @@ namespace GuiVariant
             clearDatabase.IsEnabled = false;
         }
 
-        private void collectionUpdater()
+        private async void collectionUpdater()
         {
             try
             {
                 if (httpClient.GetAsync(SERVER_URL).Result.StatusCode == System.Net.HttpStatusCode.NotFound)
                 {
-                    Dispatcher.BeginInvoke(new Action(() =>
-                    {
-                        MessageBox.Show("Recognition failed! Wrong URL", "Info");
-                        stopRecognitionBtn_Click(null, null);
-                    }));
+                    await Dispatcher.BeginInvoke(new Action(() =>
+                     {
+                         MessageBox.Show("Recognition failed! Wrong URL", "Info");
+                         stopRecognitionBtn_Click(null, null);
+                     }));
                     return;
                 }
             } catch(AggregateException)
             {
-                Dispatcher.BeginInvoke(new Action(() =>
+                await Dispatcher.BeginInvoke(new Action(() =>
                 {
                     MessageBox.Show("Recognition failed! Connection timed out", "Info");
                     stopRecognitionBtn_Click(null, null);
@@ -134,38 +134,38 @@ namespace GuiVariant
                     var dataAsString = JsonConvert.SerializeObject(bi);
                     var content = new StringContent(dataAsString);
                     content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
-                    var httpResponse = httpClient.PostAsync(SERVER_URL, content, cancelTokens.Token).Result;
+                    var httpResponse = await httpClient.PostAsync(SERVER_URL, content, cancelTokens.Token);
                     if (httpResponse.IsSuccessStatusCode)
                     {
                         var item = JsonConvert.DeserializeObject<ImageClassified>(httpResponse.Content.ReadAsStringAsync().Result);
-                        Dispatcher.BeginInvoke(new Action(() =>
-                        {
-                            var itemToUpdate = images.FirstOrDefault(i => i.ImagePath == item.ImagePath);
-                            if (itemToUpdate != null)
-                            {
-                                itemToUpdate.PredictedClass = item.ClassName;
-                                imagesView.View.Refresh();
-                            }
-                            var classToUpdate = classes.FirstOrDefault(i => i.ClassName == item.ClassName);
-                            if (classToUpdate != null)
-                            {
-                                classToUpdate.Count++;
-                                classesDataList.Items.Refresh();
-                            }
-                            else
-                            {
-                                classes.Add(new ClassInfo() { ClassName = item.ClassName, Count = 1 });
-                            }
-                        })).Wait();
+                        await Dispatcher.BeginInvoke(new Action(() =>
+                         {
+                             var itemToUpdate = images.FirstOrDefault(i => i.ImagePath == item.ImagePath);
+                             if (itemToUpdate != null)
+                             {
+                                 itemToUpdate.PredictedClass = item.ClassName;
+                                 imagesView.View.Refresh();
+                             }
+                             var classToUpdate = classes.FirstOrDefault(i => i.ClassName == item.ClassName);
+                             if (classToUpdate != null)
+                             {
+                                 classToUpdate.Count++;
+                                 classesDataList.Items.Refresh();
+                             }
+                             else
+                             {
+                                 classes.Add(new ClassInfo() { ClassName = item.ClassName, Count = 1 });
+                             }
+                         }));
                     }
                 }
-            } catch (AggregateException) {
-                Dispatcher.BeginInvoke(new Action(() =>
+            } catch {
+                await Dispatcher.BeginInvoke(new Action(() =>
                 {
                     MessageBox.Show("Recognition was interrupted!", "Info");
-                })).Wait();
+                }));
             }
-            Dispatcher.BeginInvoke(new Action(() =>
+            await Dispatcher.BeginInvoke(new Action(() =>
             {
                 imagesView.View.Refresh();
                 classesDataList.Items.Refresh();
@@ -174,7 +174,7 @@ namespace GuiVariant
                 directorySelectBtn.IsEnabled = true;
                 stopRecognitionBtn.IsEnabled = false;
                 MessageBox.Show("Recognition finished!", "Info");
-            })).Wait();
+            }));
         }
 
         private void stopRecognitionBtn_Click(object sender, RoutedEventArgs e)

@@ -21,7 +21,7 @@ namespace RESTService.Controllers
         public IEnumerable<string> Get()
         {
             using var db = new RecognitionModelContainer();
-            return (from row in db.Results select row.Filename + "|" + row.HitCount.ToString()).ToArray();
+            return (from row in db.Results select row.Filename + " | " + row.HitCount.ToString()).ToArray();
         }
 
         [HttpDelete]
