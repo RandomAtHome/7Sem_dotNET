@@ -25,11 +25,12 @@ namespace RESTService.Controllers
         }
 
         [HttpDelete]
-        public void TruncateStats()
+        public IActionResult TruncateStats()
         {
             using var db = new RecognitionModelContainer();
             db.Database.ExecuteSqlCommand("DELETE Results");
             db.Database.ExecuteSqlCommand("DELETE Blobs");
+            return Ok();
         }
     }
 
